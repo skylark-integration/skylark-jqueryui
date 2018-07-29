@@ -80,13 +80,19 @@ document.documentElement.className = "demo-loading";
 require.config( {
 	baseUrl: window.location.pathname.indexOf( "demos/" ) !== -1 ? "../../ui" : "../../../ui",
 	paths: {
-		jquery: "../external/jquery/jquery",
-		external: "../external/"
+//		"jquery": "../external/jquery/jquery",
+		"skylark-jquery": "../external/jquery/skylark-jquery-all",
+		"external": "../external/"
 	},
 	shim: {
 		"external/globalize/globalize.culture.de-DE": [ "external/globalize/globalize" ],
 		"external/globalize/globalize.culture.ja-JP": [ "external/globalize/globalize" ]
-	}
+	},
+    "map": {
+        "*": {
+            "jquery": "skylark-jquery"
+        }
+    }	
 } );
 
 // Replace effects all shortcut modules with all the effects modules

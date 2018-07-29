@@ -499,8 +499,8 @@ $.Widget.prototype = {
 				var isTracked = $.map( that.classesElementLookup, function( elements ) {
 					return elements;
 				} )
-					.some( function( elements ) {
-						return elements.is( element );
+					.some( function(elements ) {
+						return $(elements).is( element );
 					} );
 
 				if ( !isTracked ) {
