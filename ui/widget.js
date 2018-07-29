@@ -25,6 +25,9 @@
 	}
 }( function( $ ) {
 
+var langx = $.skylark.langx,
+	swidgets = $.skylark.widget;
+
 var widgetUuid = 0;
 var widgetHasOwnProperty = Array.prototype.hasOwnProperty;
 var widgetSlice = Array.prototype.slice;
@@ -70,7 +73,28 @@ $.widget = function( name, base, prototype ) {
 	};
 
 	$[ namespace ] = $[ namespace ] || {};
+
+
 	existingConstructor = $[ namespace ][ name ];
+
+	var _proto = $.widget.extend({
+
+		// TODO: remove support for widgetEventPrefix
+		// always use the name + a colon as the prefix, e.g., draggable:start
+		// don't prefix for widgets that aren't DOM-based
+		widgetEventPrefix: existingConstructor ? ( base.prototype.widgetEventPrefix || name ) : name
+	}, {
+		options : base.prototype.options
+	},prototype, {
+		name : fullName,
+		namespace: namespace,
+		widgetName: name,
+		widgetFullName: fullName
+	} );
+
+	constructor = $[ namespace ][ name ] = base.inherit(_proto);
+	/*
+
 	constructor = $[ namespace ][ name ] = function( options, element ) {
 
 		// Allow instantiation without "new" keyword
@@ -84,20 +108,21 @@ $.widget = function( name, base, prototype ) {
 			this._createWidget( options, element );
 		}
 	};
-
+	*/
 	// Extend with the existing constructor to carry over any static properties
 	$.extend( constructor, existingConstructor, {
 		version: prototype.version,
 
 		// Copy the object used to create the prototype in case we need to
 		// redefine the widget later
-		_proto: $.extend( {}, prototype ),
+		_proto: _proto,
 
 		// Track widgets that inherit from this widget in case this widget is
 		// redefined after a widget inherits from it
 		_childConstructors: []
 	} );
 
+	/*
 	basePrototype = new base();
 
 	// We need to make the options hash a property directly on the new instance
@@ -147,7 +172,7 @@ $.widget = function( name, base, prototype ) {
 		widgetName: name,
 		widgetFullName: fullName
 	} );
-
+	*/
 	// If this widget is being redefined then we need to find all widgets that
 	// are inheriting from it and redefine all of them so that they inherit from
 	// the new version of this widget. We're essentially trying to replace one
@@ -272,10 +297,8 @@ $.widget.bridge = function( name, object ) {
 	};
 };
 
-$.Widget = function( /* options, element */ ) {};
-$.Widget._childConstructors = [];
 
-$.Widget.prototype = {
+$.Widget = 	 swidgets.Widget.inherit({
 	widgetName: "widget",
 	widgetEventPrefix: "",
 	defaultElement: "<div>",
@@ -286,6 +309,23 @@ $.Widget.prototype = {
 
 		// Callbacks
 		create: null
+	},
+
+	init : function(options,element) {
+		this.options = $.widget.extend( {}, this.options );
+
+		this._createWidget( options, element );
+	},
+
+	_super : function() {
+		if (this.overrided) {
+			return this.overrided.apply(this,arguments);
+		}
+	},
+	_superApply : function ( args ) {
+		if (this.overrided) {
+			return this.overrided.apply(this,args);
+		}
 	},
 
 	_createWidget: function( options, element ) {
@@ -698,7 +738,9 @@ $.Widget.prototype = {
 			callback.apply( this.element[ 0 ], [ event ].concat( data ) ) === false ||
 			event.isDefaultPrevented() );
 	}
-};
+});
+
+$.Widget._childConstructors = [];
 
 $.each( { show: "fadeIn", hide: "fadeOut" }, function( method, defaultEffect ) {
 	$.Widget.prototype[ "_" + method ] = function( element, options, callback ) {
