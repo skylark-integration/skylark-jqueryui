@@ -567,7 +567,7 @@ return $.widget( "ui.accordion", {
 		}
 
 		toHide.slideUp();
-		toShow.slideDown();
+		toShow.slideDown(complete);
 		/*
 		total = toShow.show().outerHeight();
 		toHide.animate( this.hideProps, {
