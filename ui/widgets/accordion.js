@@ -566,6 +566,9 @@ return $.widget( "ui.accordion", {
 			return toHide.animate( this.hideProps, duration, easing, complete );
 		}
 
+		toHide.slideUp();
+		toShow.slideDown();
+		/*
 		total = toShow.show().outerHeight();
 		toHide.animate( this.hideProps, {
 			duration: duration,
@@ -592,6 +595,7 @@ return $.widget( "ui.accordion", {
 					}
 				}
 			} );
+		*/
 	},
 
 	_toggleComplete: function( data ) {
