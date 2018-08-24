@@ -26,7 +26,7 @@
 }( function( $ ) {
 
 var langx = $.skylark.langx,
-	swidgets = $.skylark.widget;
+	swidgets = $.skylark.widgets;
 
 var widgetUuid = 0;
 var widgetHasOwnProperty = Array.prototype.hasOwnProperty;
