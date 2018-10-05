@@ -49,16 +49,40 @@ return $.effects.define( "pulsate", "show", function( options, done ) {
 	}
 
 	// Anims - 1 opacity "toggles"
+
+	var skylark = $.skylark,
+		langx = skylark.langx,
+		Deferred = langx.Deferred;
+	var funcs = [];
+
+	function doAnimate(element,properties, duration, ease) {
+		return function() {
+			var d = new Deferred();
+
+			element.animate( properties, duration, ease ,function(){
+				d.resolve();
+			});
+			return d.promise;
+
+		}
+	}
+
+
 	for ( ; i < anims; i++ ) {
-		element.animate( { opacity: animateTo }, duration, options.easing );
+		funcs.push(doAnimate(element,{ opacity: animateTo }, duration, options.easing ));
 		animateTo = 1 - animateTo;
 	}
 
-	element.animate( { opacity: animateTo }, duration, options.easing );
+    funcs.push(doAnimate(element,{ opacity: animateTo }, duration, options.easing ));
 
-	element.queue( done );
+	funcs.push(done);
+	funcs.reduce(function(prev, curr, index, array) {
+  		return prev.then(curr);
+	}, Deferred.resolve());
 
-	$.effects.unshift( element, queuelen, anims + 1 );
+	//element.queue( done );
+
+	//$.effects.unshift( element, queuelen, anims + 1 );
 } );
 
 } ) );

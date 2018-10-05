@@ -37,23 +37,24 @@ return $.effects.define( "drop", "hide", function( options, done ) {
 		show = mode === "show",
 		direction = options.direction || "left",
 		ref = ( direction === "up" || direction === "down" ) ? "top" : "left",
-		motion = ( direction === "up" || direction === "left" ) ? "-=" : "+=",
-		oppositeMotion = ( motion === "+=" ) ? "-=" : "+=",
+		motion = ( direction === "up" || direction === "left" ) ? -1 : 1,
+		oppositeMotion =  motion * -1,
 		animation = {
 			opacity: 0
-		};
+		},
+		start = element.position()[ref];
 
 	$.effects.createPlaceholder( element );
 
 	distance = options.distance ||
 		element[ ref === "top" ? "outerHeight" : "outerWidth" ]( true ) / 2;
 
-	animation[ ref ] = motion + distance;
+	animation[ ref ] = start + motion * distance;
 
 	if ( show ) {
 		element.css( animation );
 
-		animation[ ref ] = oppositeMotion + distance;
+		animation[ ref ] = start + oppositeMotion * distance;
 		animation.opacity = 1;
 	}
 

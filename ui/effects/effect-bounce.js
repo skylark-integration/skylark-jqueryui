@@ -38,6 +38,7 @@ return $.effects.define( "bounce", function( options, done ) {
 		hide = mode === "hide",
 		show = mode === "show",
 		direction = options.direction || "up",
+		start,
 		distance = options.distance,
 		times = options.times || 5,
 
@@ -55,12 +56,18 @@ return $.effects.define( "bounce", function( options, done ) {
 
 	$.effects.createPlaceholder( element );
 
+	var skylark = $.skylark,
+		langx = skylark.langx,
+		Deferred = langx.Deferred;
+	var funcs = [];
+
 	refValue = element.css( ref );
 
 	// Default distance for the BIGGEST bounce is the outer Distance / 3
 	if ( !distance ) {
 		distance = element[ ref === "top" ? "outerHeight" : "outerWidth" ]() / 3;
 	}
+	start = element.position()[ref];
 
 	if ( show ) {
 		downAnim = { opacity: 1 };
@@ -70,8 +77,9 @@ return $.effects.define( "bounce", function( options, done ) {
 		// then do the "first" animation
 		element
 			.css( "opacity", 0 )
-			.css( ref, motion ? -distance * 2 : distance * 2 )
-			.animate( downAnim, speed, easing );
+			.css( ref, start + (motion ? -distance * 2 : distance * 2 ));
+
+		funcs.push(doAnimate(element,downAnim, speed, easing));
 	}
 
 	// Start at the smallest distance if we are hiding
@@ -82,14 +90,27 @@ return $.effects.define( "bounce", function( options, done ) {
 	downAnim = {};
 	downAnim[ ref ] = refValue;
 
+
+	function doAnimate(element,properties, duration, ease) {
+		return function() {
+			var d = new Deferred();
+
+			element.animate( properties, duration, easing ,function(){
+				d.resolve();
+			});
+			return d.promise;
+
+		}
+	}
+
 	// Bounces up/down/left/right then back to 0 -- times * 2 animations happen here
 	for ( ; i < times; i++ ) {
 		upAnim = {};
-		upAnim[ ref ] = ( motion ? "-=" : "+=" ) + distance;
+		upAnim[ ref ] = start + ( motion ? -distance : distance) ;
 
-		element
-			.animate( upAnim, speed, easing )
-			.animate( downAnim, speed, easing );
+		funcs.push(doAnimate(element,upAnim, speed, easing));
+
+		funcs.push(doAnimate(element,downAnim, speed, easing));
 
 		distance = hide ? distance * 2 : distance / 2;
 	}
@@ -97,14 +118,18 @@ return $.effects.define( "bounce", function( options, done ) {
 	// Last Bounce when Hiding
 	if ( hide ) {
 		upAnim = { opacity: 0 };
-		upAnim[ ref ] = ( motion ? "-=" : "+=" ) + distance;
+		upAnim[ ref ] = start + ( motion ? -1 * distance : distance) ;
 
-		element.animate( upAnim, speed, easing );
+		funcs.push(doAnimate(element,upAnim, speed, easing ));
 	}
 
-	element.queue( done );
+	funcs.push(done);
+	funcs.reduce(function(prev, curr, index, array) {
+  		return prev.then(curr);
+	}, Deferred.resolve());
+	//element.queue( done );
 
-	$.effects.unshift( element, queuelen, anims + 1 );
+	//$.effects.unshift( element, queuelen, anims + 1 );
 } );
 
 } ) );

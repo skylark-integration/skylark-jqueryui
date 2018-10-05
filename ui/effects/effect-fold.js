@@ -69,21 +69,36 @@ return $.effects.define( "fold", "hide", function( options, done ) {
 	}
 
 	// Animate
-	element
-		.queue( function( next ) {
-			if ( placeholder ) {
-				placeholder
-					.animate( $.effects.clipToBox( animation1 ), duration, options.easing )
-					.animate( $.effects.clipToBox( animation2 ), duration, options.easing );
-			}
+	var skylark = $.skylark,
+		langx = skylark.langx,
+		Deferred = langx.Deferred;
+	var funcs = [];
 
-			next();
-		} )
-		.animate( animation1, duration, options.easing )
-		.animate( animation2, duration, options.easing )
-		.queue( done );
+	function doAnimate(element,properties, duration, ease) {
+		return function() {
+			var d = new Deferred();
 
-	$.effects.unshift( element, queuelen, 4 );
+			element.animate( properties, duration, ease ,function(){
+				d.resolve();
+			});
+			return d.promise;
+
+		}
+	}
+
+	if ( placeholder ) {
+		funcs.push(doAnimate(placeholder,$.effects.clipToBox( animation1 ), duration, options.easing ));
+		funcs.push(doAnimate(placeholder,$.effects.clipToBox( animation2 ), duration, options.easing ));
+	}
+
+	funcs.push(doAnimate(element,animation1, duration, options.easing ));
+	funcs.push(doAnimate(element,animation2, duration, options.easing ));
+
+	funcs.push(done);
+	funcs.reduce(function(prev, curr, index, array) {
+  		return prev.then(curr);
+	}, Deferred.resolve());
+	
 } );
 
 } ) );

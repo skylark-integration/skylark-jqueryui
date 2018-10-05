@@ -1455,9 +1455,11 @@ $.fn.extend( {
 		// Run prefilter on all elements first to ensure that
 		// any showing or hiding happens before placeholder creation,
 		// which ensures that any layout changes are correctly captured.
-		return queue === false ?
-			this.each( prefilter ).each( run ) :
-			this.queue( queueName, prefilter ).queue( queueName, run );
+		//return queue === false ?
+		//	this.each( prefilter ).each( run ) :
+		//	this.queue( queueName, prefilter ).queue( queueName, run );
+
+		return this.each( prefilter ).each( run );	
 	},
 
 	show: ( function( orig ) {
@@ -1504,7 +1506,9 @@ $.fn.extend( {
 			if ( style.indexOf( unit ) > 0 ) {
 				val = [ parseFloat( style ), unit ];
 			}
-		} );
+		});
+
+
 		return val;
 	},
 
