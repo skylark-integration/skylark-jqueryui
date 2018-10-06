@@ -65,6 +65,9 @@ function getPath( module ) {
 			}
 		}
 	}
+	if (module.indexOf("external") == -1) {
+		return "skylark-jqueryui/"+module;
+	}
 	return module;
 }
 function fixPaths( modules ) {
