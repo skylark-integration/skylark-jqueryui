@@ -52,16 +52,16 @@ var widgets = [
 function getPath( module ) {
 	for ( var i = 0; i < widgets.length; i++ ) {
 		if ( widgets[ i ] === module ) {
-			return "widgets/" + module;
+			return "skylark-jqueryui/widgets/" + module;
 		}
 	}
 	for ( var j = 0; j < effectsAll.length; j++ ) {
 		if ( module !== "effect" ) {
 			if ( effectsAll[ j ] === module ) {
-				return module;
+				return "skylark-jqueryui/"+module;
 			}
 			if ( effectsAll[ j ].indexOf( module ) !== -1 ) {
-				return "effects/" + module;
+				return "skylark-jqueryui/effects/" + module;
 			}
 		}
 	}
@@ -78,10 +78,15 @@ function fixPaths( modules ) {
 document.documentElement.className = "demo-loading";
 
 require.config( {
-	baseUrl: window.location.pathname.indexOf( "demos/" ) !== -1 ? "../../ui" : "../../../ui",
+	baseUrl: window.location.pathname.indexOf( "demos/" ) !== -1 ? ".." : "../..",
+	packages : [
+      { name: "skylark-langx", location: "../node_modules/skylark-langx/dist/uncompressed/skylark-langx" },
+      { name: "skylark-utils", location: "../node_modules/skylark-utils/dist/uncompressed/skylark-utils" },
+      { name: "skylark-jquery", location: "../node_modules/skylark-jquery/dist/uncompressed/skylark-jquery" },
+      { name: "skylark-jqueryui", location: "../src" }
+
+	],
 	paths: {
-//		"jquery": "../external/jquery/jquery",
-		"skylark-jquery": "../external/jquery/skylark-jquery-all",
 		"external": "../external/"
 	},
 	shim: {

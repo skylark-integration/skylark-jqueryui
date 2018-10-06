@@ -1,0 +1,9 @@
+/**
+ * skylark-jqueryui - A version of backbone that ported to running on skylarkjs
+ * @author Hudaokeji, Inc.
+ * @version v0.9.0
+ * @link https://github.com/skylarkui/skylark-jqueryui/
+ * @license MIT
+ */
+define(["skylark-jquery","../version","../effect"],function(e){var f;return e.uiBackCompat!==!1&&(f=e.effects.define("transfer",function(f,n){e(this).transfer(f,n)})),f});
+//# sourceMappingURL=../sourcemaps/effects/effect-transfer.js.map
