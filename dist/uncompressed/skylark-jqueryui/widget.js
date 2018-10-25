@@ -13,10 +13,12 @@
 //>>docs: http://api.jqueryui.com/jQuery.widget/
 //>>demos: http://jqueryui.com/widget/
 
-define( [ "skylark-jquery", "./version" ],  function( $ ) {
-
-	var langx = $.skylark.langx,
-		swidgets = $.skylark.widgets;
+define( [ 
+	"skylark-langx/langx",
+	"skylark-utils/widgets",
+	"skylark-jquery", 
+	"./version" 
+],  function(langx,swidgets, $ ) {
 
 	var widgetUuid = 0;
 	var widgetHasOwnProperty = Array.prototype.hasOwnProperty;
@@ -36,7 +38,7 @@ define( [ "skylark-jquery", "./version" ],  function( $ ) {
 			orig( elems );
 		};
 	} )( $.cleanData );
-
+	
 	$.widget = function( name, base, prototype ) {
 		var existingConstructor, constructor, basePrototype;
 
@@ -288,7 +290,7 @@ define( [ "skylark-jquery", "./version" ],  function( $ ) {
 	};
 
 
-	$.Widget = 	 swidgets.Widget.inherit({
+	$.Widget = 	 langx.Evented.inherit({
 		widgetName: "widget",
 		widgetEventPrefix: "",
 		defaultElement: "<div>",

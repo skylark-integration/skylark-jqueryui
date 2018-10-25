@@ -91,23 +91,313 @@ define('skylark-utils/skylark',["skylark-langx/skylark"], function(skylark) {
     return skylark;
 });
 
-define('skylark-langx/langx',["./skylark"], function(skylark) {
-    "use strict";
-    var toString = {}.toString,
-        concat = Array.prototype.concat,
-        indexOf = Array.prototype.indexOf,
+define('skylark-utils-dom/skylark',["skylark-langx/skylark"], function(skylark) {
+    return skylark;
+});
+
+define('skylark-langx/types',[
+],function(){
+    var type = (function() {
+        var class2type = {};
+
+        // Populate the class2type map
+        "Boolean Number String Function Array Date RegExp Object Error".split(" ").forEach(function(name) {
+            class2type["[object " + name + "]"] = name.toLowerCase();
+        });
+
+        return function type(obj) {
+            return obj == null ? String(obj) :
+                class2type[toString.call(obj)] || "object";
+        };
+    })();
+
+    function isArray(object) {
+        return object && object.constructor === Array;
+    }
+
+    function isArrayLike(obj) {
+        return !isString(obj) && !isHtmlNode(obj) && typeof obj.length == 'number' && !isFunction(obj);
+    }
+
+    function isBoolean(obj) {
+        return typeof(obj) === "boolean";
+    }
+
+    function isDefined(obj) {
+        return typeof obj !== 'undefined';
+    }
+
+    function isDocument(obj) {
+        return obj != null && obj.nodeType == obj.DOCUMENT_NODE;
+    }
+
+    function isEmptyObject(obj) {
+        var name;
+        for (name in obj) {
+            if (obj[name] !== null) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    function isFunction(value) {
+        return type(value) == "function";
+    }
+
+    function isHtmlNode(obj) {
+        return obj && (obj instanceof Node);
+    }
+
+    function isInstanceOf( /*Object*/ value, /*Type*/ type) {
+        //Tests whether the value is an instance of a type.
+        if (value === undefined) {
+            return false;
+        } else if (value === null || type == Object) {
+            return true;
+        } else if (typeof value === "number") {
+            return type === Number;
+        } else if (typeof value === "string") {
+            return type === String;
+        } else if (typeof value === "boolean") {
+            return type === Boolean;
+        } else if (typeof value === "string") {
+            return type === String;
+        } else {
+            return (value instanceof type) || (value && value.isInstanceOf ? value.isInstanceOf(type) : false);
+        }
+    }
+
+    function isNumber(obj) {
+        return typeof obj == 'number';
+    }
+
+    function isObject(obj) {
+        return type(obj) == "object";
+    }
+
+    function isPlainObject(obj) {
+        return isObject(obj) && !isWindow(obj) && Object.getPrototypeOf(obj) == Object.prototype;
+    }
+
+    function isString(obj) {
+        return typeof obj === 'string';
+    }
+
+    function isWindow(obj) {
+        return obj && obj == obj.window;
+    }
+
+    function isSameOrigin(href) {
+        if (href) {
+            var origin = location.protocol + '//' + location.hostname;
+            if (location.port) {
+                origin += ':' + location.port;
+            }
+            return href.startsWith(origin);
+        }
+    }
+
+    return {
+
+        isArray: isArray,
+
+        isArrayLike: isArrayLike,
+
+        isBoolean: isBoolean,
+
+        isDefined: isDefined,
+
+        isDocument: isDocument,
+
+        isEmptyObject: isEmptyObject,
+
+        isFunction: isFunction,
+
+        isHtmlNode: isHtmlNode,
+
+        isNumber: isNumber,
+
+        isObject: isObject,
+
+        isPlainObject: isPlainObject,
+
+        isString: isString,
+
+        isSameOrigin: isSameOrigin,
+
+        isWindow: isWindow,
+
+        type: type
+    };
+
+});
+define('skylark-langx/arrays',[
+	"./types"
+],function(types){
+	var filter = Array.prototype.filter,
+		isArrayLike = types.isArrayLike;
+
+    function compact(array) {
+        return filter.call(array, function(item) {
+            return item != null;
+        });
+    }
+
+    function each(obj, callback) {
+        var length, key, i, undef, value;
+
+        if (obj) {
+            length = obj.length;
+
+            if (length === undef) {
+                // Loop object items
+                for (key in obj) {
+                    if (obj.hasOwnProperty(key)) {
+                        value = obj[key];
+                        if (callback.call(value, key, value) === false) {
+                            break;
+                        }
+                    }
+                }
+            } else {
+                // Loop array items
+                for (i = 0; i < length; i++) {
+                    value = obj[i];
+                    if (callback.call(value, i, value) === false) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        return this;
+    }
+
+    function flatten(array) {
+        if (isArrayLike(array)) {
+            var result = [];
+            for (var i = 0; i < array.length; i++) {
+                var item = array[i];
+                if (isArrayLike(item)) {
+                    for (var j = 0; j < item.length; j++) {
+                        result.push(item[j]);
+                    }
+                } else {
+                    result.push(item);
+                }
+            }
+            return result;
+        } else {
+            return array;
+        }
+        //return array.length > 0 ? concat.apply([], array) : array;
+    }
+
+    function grep(array, callback) {
+        var out = [];
+
+        each(array, function(i, item) {
+            if (callback(item, i)) {
+                out.push(item);
+            }
+        });
+
+        return out;
+    }
+
+    function inArray(item, array) {
+        if (!array) {
+            return -1;
+        }
+        var i;
+
+        if (array.indexOf) {
+            return array.indexOf(item);
+        }
+
+        i = array.length;
+        while (i--) {
+            if (array[i] === item) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    function makeArray(obj, offset, startWith) {
+       if (isArrayLike(obj) ) {
+        return (startWith || []).concat(Array.prototype.slice.call(obj, offset || 0));
+      }
+
+      // array of single index
+      return [ obj ];             
+    }
+
+    function map(elements, callback) {
+        var value, values = [],
+            i, key
+        if (isArrayLike(elements))
+            for (i = 0; i < elements.length; i++) {
+                value = callback.call(elements[i], elements[i], i);
+                if (value != null) values.push(value)
+            }
+        else
+            for (key in elements) {
+                value = callback.call(elements[key], elements[key], key);
+                if (value != null) values.push(value)
+            }
+        return flatten(values)
+    }
+
+    function uniq(array) {
+        return filter.call(array, function(item, idx) {
+            return array.indexOf(item) == idx;
+        })
+    }
+
+    return {
+        compact: compact,
+
+        first : function(items,n) {
+            if (n) {
+                return items.slice(0,n);
+            } else {
+                return items[0];
+            }
+        },
+
+	    each: each,
+
+        flatten: flatten,
+
+        inArray: inArray,
+
+        makeArray: makeArray,
+
+        map : map,
+        
+        uniq : uniq
+
+    }
+});
+define('skylark-langx/objects',[
+	"./types"
+],function(types){
+	var hasOwnProperty = Object.prototype.hasOwnProperty,
         slice = Array.prototype.slice,
-        filter = Array.prototype.filter,
-        hasOwnProperty = Object.prototype.hasOwnProperty;
+        isBoolean = types.isBoolean,
+        isFunction = types.isFunction,
+		isObject = types.isObject,
+		isPlainObject = types.isPlainObject,
+		isArray = types.isArray;
 
-
-    var  PGLISTENERS = Symbol ? Symbol() : '__pglisteners';
-
-    // An internal function for creating assigner functions.
+     // An internal function for creating assigner functions.
     function createAssigner(keysFunc, defaults) {
         return function(obj) {
           var length = arguments.length;
-          if (defaults) obj = Object(obj);
+          if (defaults) obj = Object(obj);  
           if (length < 2 || obj == null) return obj;
           for (var index = 1; index < length; index++) {
             var source = arguments[index],
@@ -229,119 +519,231 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
         return true;
     };
 
-    var undefined, nextId = 0;
-    function advise(dispatcher, type, advice, receiveArguments){
-        var previous = dispatcher[type];
-        var around = type == "around";
-        var signal;
-        if(around){
-            var advised = advice(function(){
-                return previous.advice(this, arguments);
-            });
-            signal = {
-                remove: function(){
-                    if(advised){
-                        advised = dispatcher = advice = null;
-                    }
-                },
-                advice: function(target, args){
-                    return advised ?
-                        advised.apply(target, args) :  // called the advised function
-                        previous.advice(target, args); // cancelled, skip to next one
-                }
-            };
-        }else{
-            // create the remove handler
-            signal = {
-                remove: function(){
-                    if(signal.advice){
-                        var previous = signal.previous;
-                        var next = signal.next;
-                        if(!next && !previous){
-                            delete dispatcher[type];
-                        }else{
-                            if(previous){
-                                previous.next = next;
-                            }else{
-                                dispatcher[type] = next;
-                            }
-                            if(next){
-                                next.previous = previous;
-                            }
-                        }
-
-                        // remove the advice to signal that this signal has been removed
-                        dispatcher = advice = signal.advice = null;
-                    }
-                },
-                id: nextId++,
-                advice: advice,
-                receiveArguments: receiveArguments
-            };
-        }
-        if(previous && !around){
-            if(type == "after"){
-                // add the listener to the end of the list
-                // note that we had to change this loop a little bit to workaround a bizarre IE10 JIT bug
-                while(previous.next && (previous = previous.next)){}
-                previous.next = signal;
-                signal.previous = previous;
-            }else if(type == "before"){
-                // add to beginning
-                dispatcher[type] = signal;
-                signal.next = previous;
-                previous.previous = signal;
-            }
-        }else{
-            // around or first one just replaces
-            dispatcher[type] = signal;
-        }
-        return signal;
+    // Retrieve all the property names of an object.
+    function allKeys(obj) {
+        if (!isObject(obj)) return [];
+        var keys = [];
+        for (var key in obj) keys.push(key);
+        return keys;
     }
-    function aspect(type){
-        return function(target, methodName, advice, receiveArguments){
-            var existing = target[methodName], dispatcher;
-            if(!existing || existing.target != target){
-                // no dispatcher in place
-                target[methodName] = dispatcher = function(){
-                    var executionId = nextId;
-                    // before advice
-                    var args = arguments;
-                    var before = dispatcher.before;
-                    while(before){
-                        args = before.advice.apply(this, args) || args;
-                        before = before.next;
-                    }
-                    // around advice
-                    if(dispatcher.around){
-                        var results = dispatcher.around.advice(this, args);
-                    }
-                    // after advice
-                    var after = dispatcher.after;
-                    while(after && after.id < executionId){
-                        if(after.receiveArguments){
-                            var newResults = after.advice.apply(this, args);
-                            // change the return value only if a new value was returned
-                            results = newResults === undefined ? results : newResults;
-                        }else{
-                            results = after.advice.call(this, results, args);
-                        }
-                        after = after.next;
-                    }
-                    return results;
-                };
-                if(existing){
-                    dispatcher.around = {advice: function(target, args){
-                        return existing.apply(target, args);
-                    }};
-                }
-                dispatcher.target = target;
+
+    // Retrieve the names of an object's own properties.
+    // Delegates to **ECMAScript 5**'s native `Object.keys`.
+    function keys(obj) {
+        if (isObject(obj)) return [];
+        var keys = [];
+        for (var key in obj) if (has(obj, key)) keys.push(key);
+        return keys;
+    }
+
+    function has(obj, path) {
+        if (!isArray(path)) {
+            return obj != null && hasOwnProperty.call(obj, path);
+        }
+        var length = path.length;
+        for (var i = 0; i < length; i++) {
+            var key = path[i];
+            if (obj == null || !hasOwnProperty.call(obj, key)) {
+                return false;
             }
-            var results = advise((dispatcher || existing), type, advice, receiveArguments);
-            advice = null;
-            return results;
+            obj = obj[key];
+        }
+        return !!length;
+    }
+
+   // Perform a deep comparison to check if two objects are equal.
+    function isEqual(a, b) {
+        return eq(a, b);
+    }
+
+    // Returns whether an object has a given set of `key:value` pairs.
+    function isMatch(object, attrs) {
+        var keys = keys(attrs), length = keys.length;
+        if (object == null) return !length;
+        var obj = Object(object);
+        for (var i = 0; i < length; i++) {
+          var key = keys[i];
+          if (attrs[key] !== obj[key] || !(key in obj)) return false;
+        }
+        return true;
+    }    
+
+    function _mixin(target, source, deep, safe) {
+        for (var key in source) {
+            //if (!source.hasOwnProperty(key)) {
+            //    continue;
+            //}
+            if (safe && target[key] !== undefined) {
+                continue;
+            }
+            if (deep && (isPlainObject(source[key]) || isArray(source[key]))) {
+                if (isPlainObject(source[key]) && !isPlainObject(target[key])) {
+                    target[key] = {};
+                }
+                if (isArray(source[key]) && !isArray(target[key])) {
+                    target[key] = [];
+                }
+                _mixin(target[key], source[key], deep, safe);
+            } else if (source[key] !== undefined) {
+                target[key] = source[key]
+            }
+        }
+        return target;
+    }
+
+    function _parseMixinArgs(args) {
+        var params = slice.call(arguments, 0),
+            target = params.shift(),
+            deep = false;
+        if (isBoolean(params[params.length - 1])) {
+            deep = params.pop();
+        }
+
+        return {
+            target: target,
+            sources: params,
+            deep: deep
         };
     }
+
+    function mixin() {
+        var args = _parseMixinArgs.apply(this, arguments);
+
+        args.sources.forEach(function(source) {
+            _mixin(args.target, source, args.deep, false);
+        });
+        return args.target;
+    }
+
+    function removeItem(items, item) {
+        if (isArray(items)) {
+            var idx = items.indexOf(item);
+            if (idx != -1) {
+                items.splice(idx, 1);
+            }
+        } else if (isPlainObject(items)) {
+            for (var key in items) {
+                if (items[key] == item) {
+                    delete items[key];
+                    break;
+                }
+            }
+        }
+
+        return this;
+    }
+
+    function result(obj, path, fallback) {
+        if (!isArray(path)) {
+            path = [path]
+        };
+        var length = path.length;
+        if (!length) {
+          return isFunction(fallback) ? fallback.call(obj) : fallback;
+        }
+        for (var i = 0; i < length; i++) {
+          var prop = obj == null ? void 0 : obj[path[i]];
+          if (prop === void 0) {
+            prop = fallback;
+            i = length; // Ensure we don't continue iterating.
+          }
+          obj = isFunction(prop) ? prop.call(obj) : prop;
+        }
+
+        return obj;
+    }
+
+    function safeMixin() {
+        var args = _parseMixinArgs.apply(this, arguments);
+
+        args.sources.forEach(function(source) {
+            _mixin(args.target, source, args.deep, true);
+        });
+        return args.target;
+    }
+
+    // Retrieve the values of an object's properties.
+    function values(obj) {
+        var keys = _.keys(obj);
+        var length = keys.length;
+        var values = Array(length);
+        for (var i = 0; i < length; i++) {
+            values[i] = obj[keys[i]];
+        }
+        return values;
+    }
+
+
+    
+    function clone( /*anything*/ src,checkCloneMethod) {
+        var copy;
+        if (src === undefined || src === null) {
+            copy = src;
+        } else if (checkCloneMethod && src.clone) {
+            copy = src.clone();
+        } else if (isArray(src)) {
+            copy = [];
+            for (var i = 0; i < src.length; i++) {
+                copy.push(clone(src[i]));
+            }
+        } else if (isPlainObject(src)) {
+            copy = {};
+            for (var key in src) {
+                copy[key] = clone(src[key]);
+            }
+        } else {
+            copy = src;
+        }
+
+        return copy;
+
+    }
+
+    return {
+        allKeys: allKeys,
+
+        clone: clone,
+
+        defaults : createAssigner(allKeys, true),
+
+        has: has,
+
+        isEqual: isEqual,
+
+        isMatch: isMatch,
+
+        keys: keys,
+
+        mixin: mixin,
+
+        removeItem: removeItem,
+
+        result : result,
+        
+        safeMixin: safeMixin,
+
+        values: values
+    };
+
+});
+define('skylark-langx/klass',[
+    "./arrays",
+    "./objects",
+    "./types"
+],function(arrays,objects,types){
+    var uniq = arrays.uniq,
+        has = objects.has,
+        mixin = objects.mixin,
+        isArray = types.isArray,
+        isDefined = types.isDefined;
+    
+    function inherit(ctor, base) {
+        var f = function() {};
+        f.prototype = base.prototype;
+
+        ctor.prototype = new f();
+    }
+
 
     var f1 = function() {
         function extendClass(ctor, props, options) {
@@ -524,394 +926,484 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
 
     var createClass = f1();
 
+    return createClass;
+});
+define('skylark-langx/ArrayStore',[
+    "./klass"
+],function(klass){
+    var SimpleQueryEngine = function(query, options){
+        // summary:
+        //      Simple query engine that matches using filter functions, named filter
+        //      functions or objects by name-value on a query object hash
+        //
+        // description:
+        //      The SimpleQueryEngine provides a way of getting a QueryResults through
+        //      the use of a simple object hash as a filter.  The hash will be used to
+        //      match properties on data objects with the corresponding value given. In
+        //      other words, only exact matches will be returned.
+        //
+        //      This function can be used as a template for more complex query engines;
+        //      for example, an engine can be created that accepts an object hash that
+        //      contains filtering functions, or a string that gets evaluated, etc.
+        //
+        //      When creating a new dojo.store, simply set the store's queryEngine
+        //      field as a reference to this function.
+        //
+        // query: Object
+        //      An object hash with fields that may match fields of items in the store.
+        //      Values in the hash will be compared by normal == operator, but regular expressions
+        //      or any object that provides a test() method are also supported and can be
+        //      used to match strings by more complex expressions
+        //      (and then the regex's or object's test() method will be used to match values).
+        //
+        // options: dojo/store/api/Store.QueryOptions?
+        //      An object that contains optional information such as sort, start, and count.
+        //
+        // returns: Function
+        //      A function that caches the passed query under the field "matches".  See any
+        //      of the "query" methods on dojo.stores.
+        //
+        // example:
+        //      Define a store with a reference to this engine, and set up a query method.
+        //
+        //  |   var myStore = function(options){
+        //  |       //  ...more properties here
+        //  |       this.queryEngine = SimpleQueryEngine;
+        //  |       //  define our query method
+        //  |       this.query = function(query, options){
+        //  |           return QueryResults(this.queryEngine(query, options)(this.data));
+        //  |       };
+        //  |   };
 
-    // Retrieve all the property names of an object.
-    function allKeys(obj) {
-        if (!isObject(obj)) return [];
-        var keys = [];
-        for (var key in obj) keys.push(key);
-        return keys;
-    }
-
-    function createEvent(type, props) {
-        var e = new CustomEvent(type, props);
-
-        return safeMixin(e, props);
-    }
-    
-    function debounce(fn, wait) {
-        var timeout;
-        return function () {
-            var context = this, args = arguments;
-            var later = function () {
-                timeout = null;
-                fn.apply(context, args);
-            };
-            if (timeout) clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
-    }
-   
-    var delegate = (function() {
-        // boodman/crockford delegation w/ cornford optimization
-        function TMP() {}
-        return function(obj, props) {
-            TMP.prototype = obj;
-            var tmp = new TMP();
-            TMP.prototype = null;
-            if (props) {
-                mixin(tmp, props);
-            }
-            return tmp; // Object
-        };
-    })();
-
-
-    // Retrieve the values of an object's properties.
-    function values(obj) {
-        var keys = _.keys(obj);
-        var length = keys.length;
-        var values = Array(length);
-        for (var i = 0; i < length; i++) {
-            values[i] = obj[keys[i]];
-        }
-        return values;
-    }
-    
-    function clone( /*anything*/ src,checkCloneMethod) {
-        var copy;
-        if (src === undefined || src === null) {
-            copy = src;
-        } else if (checkCloneMethod && src.clone) {
-            copy = src.clone();
-        } else if (isArray(src)) {
-            copy = [];
-            for (var i = 0; i < src.length; i++) {
-                copy.push(clone(src[i]));
-            }
-        } else if (isPlainObject(src)) {
-            copy = {};
-            for (var key in src) {
-                copy[key] = clone(src[key]);
-            }
-        } else {
-            copy = src;
-        }
-
-        return copy;
-
-    }
-
-    function compact(array) {
-        return filter.call(array, function(item) {
-            return item != null;
-        });
-    }
-
-    /*
-     * Converts camel case into dashes.
-     * @param {String} str
-     * @return {String}
-     * @exapmle marginTop -> margin-top
-     */
-    function dasherize(str) {
-        return str.replace(/::/g, '/')
-            .replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2')
-            .replace(/([a-z\d])([A-Z])/g, '$1_$2')
-            .replace(/_/g, '-')
-            .toLowerCase();
-    }
-
-    function deserializeValue(value) {
-        try {
-            return value ?
-                value == "true" ||
-                (value == "false" ? false :
-                    value == "null" ? null :
-                    +value + "" == value ? +value :
-                    /^[\[\{]/.test(value) ? JSON.parse(value) :
-                    value) : value;
-        } catch (e) {
-            return value;
-        }
-    }
-
-    function each(obj, callback) {
-        var length, key, i, undef, value;
-
-        if (obj) {
-            length = obj.length;
-
-            if (length === undef) {
-                // Loop object items
-                for (key in obj) {
-                    if (obj.hasOwnProperty(key)) {
-                        value = obj[key];
-                        if (callback.call(value, key, value) === false) {
-                            break;
+        // create our matching query function
+        switch(typeof query){
+            default:
+                throw new Error("Can not query with a " + typeof query);
+            case "object": case "undefined":
+                var queryObject = query;
+                query = function(object){
+                    for(var key in queryObject){
+                        var required = queryObject[key];
+                        if(required && required.test){
+                            // an object can provide a test method, which makes it work with regex
+                            if(!required.test(object[key], object)){
+                                return false;
+                            }
+                        }else if(required != object[key]){
+                            return false;
                         }
                     }
+                    return true;
+                };
+                break;
+            case "string":
+                // named query
+                if(!this[query]){
+                    throw new Error("No filter function " + query + " was found in store");
                 }
-            } else {
-                // Loop array items
-                for (i = 0; i < length; i++) {
-                    value = obj[i];
-                    if (callback.call(value, i, value) === false) {
-                        break;
+                query = this[query];
+                // fall through
+            case "function":
+                // fall through
+        }
+        
+        function filter(arr, callback, thisObject){
+            // summary:
+            //      Returns a new Array with those items from arr that match the
+            //      condition implemented by callback.
+            // arr: Array
+            //      the array to iterate over.
+            // callback: Function|String
+            //      a function that is invoked with three arguments (item,
+            //      index, array). The return of this function is expected to
+            //      be a boolean which determines whether the passed-in item
+            //      will be included in the returned array.
+            // thisObject: Object?
+            //      may be used to scope the call to callback
+            // returns: Array
+            // description:
+            //      This function corresponds to the JavaScript 1.6 Array.filter() method, with one difference: when
+            //      run over sparse arrays, this implementation passes the "holes" in the sparse array to
+            //      the callback function with a value of undefined. JavaScript 1.6's filter skips the holes in the sparse array.
+            //      For more details, see:
+            //      https://developer.mozilla.org/en/Core_JavaScript_1.5_Reference/Objects/Array/filter
+            // example:
+            //  | // returns [2, 3, 4]
+            //  | array.filter([1, 2, 3, 4], function(item){ return item>1; });
+
+            // TODO: do we need "Ctr" here like in map()?
+            var i = 0, l = arr && arr.length || 0, out = [], value;
+            if(l && typeof arr == "string") arr = arr.split("");
+            if(typeof callback == "string") callback = cache[callback] || buildFn(callback);
+            if(thisObject){
+                for(; i < l; ++i){
+                    value = arr[i];
+                    if(callback.call(thisObject, value, i, arr)){
+                        out.push(value);
+                    }
+                }
+            }else{
+                for(; i < l; ++i){
+                    value = arr[i];
+                    if(callback(value, i, arr)){
+                        out.push(value);
                     }
                 }
             }
+            return out; // Array
         }
 
-        return this;
-    }
-
-    function flatten(array) {
-        if (isArrayLike(array)) {
-            var result = [];
-            for (var i = 0; i < array.length; i++) {
-                var item = array[i];
-                if (isArrayLike(item)) {
-                    for (var j = 0; j < item.length; j++) {
-                        result.push(item[j]);
+        function execute(array){
+            // execute the whole query, first we filter
+            var results = filter(array, query);
+            // next we sort
+            var sortSet = options && options.sort;
+            if(sortSet){
+                results.sort(typeof sortSet == "function" ? sortSet : function(a, b){
+                    for(var sort, i=0; sort = sortSet[i]; i++){
+                        var aValue = a[sort.attribute];
+                        var bValue = b[sort.attribute];
+                        // valueOf enables proper comparison of dates
+                        aValue = aValue != null ? aValue.valueOf() : aValue;
+                        bValue = bValue != null ? bValue.valueOf() : bValue;
+                        if (aValue != bValue){
+                            // modified by lwf 2016/07/09
+                            //return !!sort.descending == (aValue == null || aValue > bValue) ? -1 : 1;
+                            return !!sort.descending == (aValue == null || aValue > bValue) ? -1 : 1;
+                        }
                     }
-                } else {
-                    result.push(item);
-                }
+                    return 0;
+                });
             }
-            return result;
-        } else {
-            return array;
+            // now we paginate
+            if(options && (options.start || options.count)){
+                var total = results.length;
+                results = results.slice(options.start || 0, (options.start || 0) + (options.count || Infinity));
+                results.total = total;
+            }
+            return results;
         }
-        //return array.length > 0 ? concat.apply([], array) : array;
-    }
+        execute.matches = query;
+        return execute;
+    };
 
-    function funcArg(context, arg, idx, payload) {
-        return isFunction(arg) ? arg.call(context, idx, payload) : arg;
-    }
+    var QueryResults = function(results){
+        // summary:
+        //      A function that wraps the results of a store query with additional
+        //      methods.
+        // description:
+        //      QueryResults is a basic wrapper that allows for array-like iteration
+        //      over any kind of returned data from a query.  While the simplest store
+        //      will return a plain array of data, other stores may return deferreds or
+        //      promises; this wrapper makes sure that *all* results can be treated
+        //      the same.
+        //
+        //      Additional methods include `forEach`, `filter` and `map`.
+        // results: Array|dojo/promise/Promise
+        //      The result set as an array, or a promise for an array.
+        // returns:
+        //      An array-like object that can be used for iterating over.
+        // example:
+        //      Query a store and iterate over the results.
+        //
+        //  |   store.query({ prime: true }).forEach(function(item){
+        //  |       //  do something
+        //  |   });
 
-    var getAbsoluteUrl = (function() {
-        var a;
+        if(!results){
+            return results;
+        }
 
-        return function(url) {
-            if (!a) a = document.createElement('a');
-            a.href = url;
+        var isPromise = !!results.then;
+        // if it is a promise it may be frozen
+        if(isPromise){
+            results = Object.delegate(results);
+        }
+        function addIterativeMethod(method){
+            // Always add the iterative methods so a QueryResults is
+            // returned whether the environment is ES3 or ES5
+            results[method] = function(){
+                var args = arguments;
+                var result = Deferred.when(results, function(results){
+                    //Array.prototype.unshift.call(args, results);
+                    return QueryResults(Array.prototype[method].apply(results, args));
+                });
+                // forEach should only return the result of when()
+                // when we're wrapping a promise
+                if(method !== "forEach" || isPromise){
+                    return result;
+                }
+            };
+        }
 
-            return a.href;
-        };
-    })();
-
-    function getQueryParams(url) {
-        var url = url || window.location.href,
-            segs = url.split("?"),
-            params = {};
-
-        if (segs.length > 1) {
-            segs[1].split("&").forEach(function(queryParam) {
-                var nv = queryParam.split('=');
-                params[nv[0]] = nv[1];
+        addIterativeMethod("forEach");
+        addIterativeMethod("filter");
+        addIterativeMethod("map");
+        if(results.total == null){
+            results.total = Deferred.when(results, function(results){
+                return results.length;
             });
         }
-        return params;
-    }
+        return results; // Object
+    };
 
-    function grep(array, callback) {
-        var out = [];
+    var ArrayStore = klass({
+        "klassName": "ArrayStore",
 
-        each(array, function(i, item) {
-            if (callback(item, i)) {
-                out.push(item);
+        "queryEngine": SimpleQueryEngine,
+        
+        "idProperty": "id",
+
+
+        get: function(id){
+            // summary:
+            //      Retrieves an object by its identity
+            // id: Number
+            //      The identity to use to lookup the object
+            // returns: Object
+            //      The object in the store that matches the given id.
+            return this.data[this.index[id]];
+        },
+
+        getIdentity: function(object){
+            return object[this.idProperty];
+        },
+
+        put: function(object, options){
+            var data = this.data,
+                index = this.index,
+                idProperty = this.idProperty;
+            var id = object[idProperty] = (options && "id" in options) ? options.id : idProperty in object ? object[idProperty] : Math.random();
+            if(id in index){
+                // object exists
+                if(options && options.overwrite === false){
+                    throw new Error("Object already exists");
+                }
+                // replace the entry in data
+                data[index[id]] = object;
+            }else{
+                // add the new object
+                index[id] = data.push(object) - 1;
             }
-        });
+            return id;
+        },
 
-        return out;
-    }
+        add: function(object, options){
+            (options = options || {}).overwrite = false;
+            // call put with overwrite being false
+            return this.put(object, options);
+        },
 
-
-    function has(obj, path) {
-        if (!isArray(path)) {
-            return obj != null && hasOwnProperty.call(obj, path);
-        }
-        var length = path.length;
-        for (var i = 0; i < length; i++) {
-            var key = path[i];
-            if (obj == null || !hasOwnProperty.call(obj, key)) {
-                return false;
+        remove: function(id){
+            // summary:
+            //      Deletes an object by its identity
+            // id: Number
+            //      The identity to use to delete the object
+            // returns: Boolean
+            //      Returns true if an object was removed, falsy (undefined) if no object matched the id
+            var index = this.index;
+            var data = this.data;
+            if(id in index){
+                data.splice(index[id], 1);
+                // now we have to reindex
+                this.setData(data);
+                return true;
             }
-            obj = obj[key];
-        }
-        return !!length;
-    }
+        },
+        query: function(query, options){
+            // summary:
+            //      Queries the store for objects.
+            // query: Object
+            //      The query to use for retrieving objects from the store.
+            // options: dojo/store/api/Store.QueryOptions?
+            //      The optional arguments to apply to the resultset.
+            // returns: dojo/store/api/Store.QueryResults
+            //      The results of the query, extended with iterative methods.
+            //
+            // example:
+            //      Given the following store:
+            //
+            //  |   var store = new Memory({
+            //  |       data: [
+            //  |           {id: 1, name: "one", prime: false },
+            //  |           {id: 2, name: "two", even: true, prime: true},
+            //  |           {id: 3, name: "three", prime: true},
+            //  |           {id: 4, name: "four", even: true, prime: false},
+            //  |           {id: 5, name: "five", prime: true}
+            //  |       ]
+            //  |   });
+            //
+            //  ...find all items where "prime" is true:
+            //
+            //  |   var results = store.query({ prime: true });
+            //
+            //  ...or find all items where "even" is true:
+            //
+            //  |   var results = store.query({ even: true });
+            return QueryResults(this.queryEngine(query, options)(this.data));
+        },
 
-    function inArray(item, array) {
-        if (!array) {
-            return -1;
-        }
-        var i;
-
-        if (array.indexOf) {
-            return array.indexOf(item);
-        }
-
-        i = array.length;
-        while (i--) {
-            if (array[i] === item) {
-                return i;
+        setData: function(data){
+            // summary:
+            //      Sets the given data as the source for this store, and indexes it
+            // data: Object[]
+            //      An array of objects to use as the source of data.
+            if(data.items){
+                // just for convenience with the data format IFRS expects
+                this.idProperty = data.identifier || this.idProperty;
+                data = this.data = data.items;
+            }else{
+                this.data = data;
             }
-        }
-
-        return -1;
-    }
-
-    function inherit(ctor, base) {
-        var f = function() {};
-        f.prototype = base.prototype;
-
-        ctor.prototype = new f();
-    }
-
-    function isArray(object) {
-        return object && object.constructor === Array;
-    }
-
-    function isArrayLike(obj) {
-        return !isString(obj) && !isHtmlNode(obj) && typeof obj.length == 'number' && !isFunction(obj);
-    }
-
-    function isBoolean(obj) {
-        return typeof(obj) === "boolean";
-    }
-
-    function isDocument(obj) {
-        return obj != null && obj.nodeType == obj.DOCUMENT_NODE;
-    }
-
-
-
-  // Perform a deep comparison to check if two objects are equal.
-    function isEqual(a, b) {
-        return eq(a, b);
-    }
-
-    function isFunction(value) {
-        return type(value) == "function";
-    }
-
-    function isObject(obj) {
-        return type(obj) == "object";
-    }
-
-    function isPlainObject(obj) {
-        return isObject(obj) && !isWindow(obj) && Object.getPrototypeOf(obj) == Object.prototype;
-    }
-
-    function isString(obj) {
-        return typeof obj === 'string';
-    }
-
-    function isWindow(obj) {
-        return obj && obj == obj.window;
-    }
-
-    function isDefined(obj) {
-        return typeof obj !== 'undefined';
-    }
-
-    function isHtmlNode(obj) {
-        return obj && (obj instanceof Node);
-    }
-
-    function isInstanceOf( /*Object*/ value, /*Type*/ type) {
-        //Tests whether the value is an instance of a type.
-        if (value === undefined) {
-            return false;
-        } else if (value === null || type == Object) {
-            return true;
-        } else if (typeof value === "number") {
-            return type === Number;
-        } else if (typeof value === "string") {
-            return type === String;
-        } else if (typeof value === "boolean") {
-            return type === Boolean;
-        } else if (typeof value === "string") {
-            return type === String;
-        } else {
-            return (value instanceof type) || (value && value.isInstanceOf ? value.isInstanceOf(type) : false);
-        }
-    }
-
-    function isNumber(obj) {
-        return typeof obj == 'number';
-    }
-
-    function isSameOrigin(href) {
-        if (href) {
-            var origin = location.protocol + '//' + location.hostname;
-            if (location.port) {
-                origin += ':' + location.port;
+            this.index = {};
+            for(var i = 0, l = data.length; i < l; i++){
+                this.index[data[i][this.idProperty]] = i;
             }
-            return href.startsWith(origin);
-        }
-    }
+        },
 
-
-    function isEmptyObject(obj) {
-        var name;
-        for (name in obj) {
-            if (obj[name] !== null) {
-                return false;
+        init: function(options) {
+            for(var i in options){
+                this[i] = options[i];
             }
+            this.setData(this.data || []);
         }
-        return true;
-    }
 
-    // Returns whether an object has a given set of `key:value` pairs.
-    function isMatch(object, attrs) {
-        var keys = keys(attrs), length = keys.length;
-        if (object == null) return !length;
-        var obj = Object(object);
-        for (var i = 0; i < length; i++) {
-          var key = keys[i];
-          if (attrs[key] !== obj[key] || !(key in obj)) return false;
+    });
+
+	return ArrayStore;
+});
+define('skylark-langx/aspect',[
+],function(){
+
+  var undefined, nextId = 0;
+    function advise(dispatcher, type, advice, receiveArguments){
+        var previous = dispatcher[type];
+        var around = type == "around";
+        var signal;
+        if(around){
+            var advised = advice(function(){
+                return previous.advice(this, arguments);
+            });
+            signal = {
+                remove: function(){
+                    if(advised){
+                        advised = dispatcher = advice = null;
+                    }
+                },
+                advice: function(target, args){
+                    return advised ?
+                        advised.apply(target, args) :  // called the advised function
+                        previous.advice(target, args); // cancelled, skip to next one
+                }
+            };
+        }else{
+            // create the remove handler
+            signal = {
+                remove: function(){
+                    if(signal.advice){
+                        var previous = signal.previous;
+                        var next = signal.next;
+                        if(!next && !previous){
+                            delete dispatcher[type];
+                        }else{
+                            if(previous){
+                                previous.next = next;
+                            }else{
+                                dispatcher[type] = next;
+                            }
+                            if(next){
+                                next.previous = previous;
+                            }
+                        }
+
+                        // remove the advice to signal that this signal has been removed
+                        dispatcher = advice = signal.advice = null;
+                    }
+                },
+                id: nextId++,
+                advice: advice,
+                receiveArguments: receiveArguments
+            };
         }
-        return true;
-    }    
-
-    // Retrieve the names of an object's own properties.
-    // Delegates to **ECMAScript 5**'s native `Object.keys`.
-    function keys(obj) {
-        if (isObject(obj)) return [];
-        var keys = [];
-        for (var key in obj) if (has(obj, key)) keys.push(key);
-        return keys;
-    }
-
-    function makeArray(obj, offset, startWith) {
-       if (isArrayLike(obj) ) {
-        return (startWith || []).concat(Array.prototype.slice.call(obj, offset || 0));
-      }
-
-      // array of single index
-      return [ obj ];             
-    }
-
-
-
-    function map(elements, callback) {
-        var value, values = [],
-            i, key
-        if (isArrayLike(elements))
-            for (i = 0; i < elements.length; i++) {
-                value = callback.call(elements[i], elements[i], i);
-                if (value != null) values.push(value)
+        if(previous && !around){
+            if(type == "after"){
+                // add the listener to the end of the list
+                // note that we had to change this loop a little bit to workaround a bizarre IE10 JIT bug
+                while(previous.next && (previous = previous.next)){}
+                previous.next = signal;
+                signal.previous = previous;
+            }else if(type == "before"){
+                // add to beginning
+                dispatcher[type] = signal;
+                signal.next = previous;
+                previous.previous = signal;
             }
-        else
-            for (key in elements) {
-                value = callback.call(elements[key], elements[key], key);
-                if (value != null) values.push(value)
-            }
-        return flatten(values)
+        }else{
+            // around or first one just replaces
+            dispatcher[type] = signal;
+        }
+        return signal;
     }
+    function aspect(type){
+        return function(target, methodName, advice, receiveArguments){
+            var existing = target[methodName], dispatcher;
+            if(!existing || existing.target != target){
+                // no dispatcher in place
+                target[methodName] = dispatcher = function(){
+                    var executionId = nextId;
+                    // before advice
+                    var args = arguments;
+                    var before = dispatcher.before;
+                    while(before){
+                        args = before.advice.apply(this, args) || args;
+                        before = before.next;
+                    }
+                    // around advice
+                    if(dispatcher.around){
+                        var results = dispatcher.around.advice(this, args);
+                    }
+                    // after advice
+                    var after = dispatcher.after;
+                    while(after && after.id < executionId){
+                        if(after.receiveArguments){
+                            var newResults = after.advice.apply(this, args);
+                            // change the return value only if a new value was returned
+                            results = newResults === undefined ? results : newResults;
+                        }else{
+                            results = after.advice.call(this, results, args);
+                        }
+                        after = after.next;
+                    }
+                    return results;
+                };
+                if(existing){
+                    dispatcher.around = {advice: function(target, args){
+                        return existing.apply(target, args);
+                    }};
+                }
+                dispatcher.target = target;
+            }
+            var results = advise((dispatcher || existing), type, advice, receiveArguments);
+            advice = null;
+            return results;
+        };
+    }
+
+    return {
+        after: aspect("after"),
+ 
+        around: aspect("around"),
+        
+        before: aspect("before")
+    };
+});
+define('skylark-langx/funcs',[
+    "./objects",
+	"./types"
+],function(objects,types){
+	var mixin = objects.mixin,
+        isFunction = types.isFunction,
+        isString = types.isString;
 
     function defer(fn) {
         if (requestAnimationFrame) {
@@ -944,208 +1436,113 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
         }
     }
 
-
-    function toPixel(value) {
-        // style values can be floats, client code may want
-        // to round for integer pixels.
-        return parseFloat(value) || 0;
+    function debounce(fn, wait) {
+        var timeout;
+        return function () {
+            var context = this, args = arguments;
+            var later = function () {
+                timeout = null;
+                fn.apply(context, args);
+            };
+            if (timeout) clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
     }
-
-    var type = (function() {
-        var class2type = {};
-
-        // Populate the class2type map
-        each("Boolean Number String Function Array Date RegExp Object Error".split(" "), function(i, name) {
-            class2type["[object " + name + "]"] = name.toLowerCase();
-        });
-
-        return function type(obj) {
-            return obj == null ? String(obj) :
-                class2type[toString.call(obj)] || "object";
+   
+    var delegate = (function() {
+        // boodman/crockford delegation w/ cornford optimization
+        function TMP() {}
+        return function(obj, props) {
+            TMP.prototype = obj;
+            var tmp = new TMP();
+            TMP.prototype = null;
+            if (props) {
+                mixin(tmp, props);
+            }
+            return tmp; // Object
         };
     })();
 
-    function trim(str) {
-        return str == null ? "" : String.prototype.trim.call(str);
-    }
 
-    function removeItem(items, item) {
-        if (isArray(items)) {
-            var idx = items.indexOf(item);
-            if (idx != -1) {
-                items.splice(idx, 1);
-            }
-        } else if (isPlainObject(items)) {
-            for (var key in items) {
-                if (items[key] == item) {
-                    delete items[key];
-                    break;
-                }
-            }
+    return {
+        debounce: debounce,
+
+        delegate: delegate,
+
+        defer: defer,
+
+        noop : noop,
+
+        proxy: proxy,
+
+        returnTrue: function() {
+            return true;
+        },
+
+        returnFalse: function() {
+            return false;
         }
+    };
+});
+define('skylark-langx/Deferred',[
+    "./arrays",
+	"./funcs",
+    "./objects"
+],function(arrays,funcs,objects){
+    "use strict";
+    
+    var  PGLISTENERS = Symbol ? Symbol() : '__pglisteners';
 
-        return this;
-    }
+    var slice = Array.prototype.slice,
+        proxy = funcs.proxy,
+        makeArray = arrays.makeArray,
+        result = objects.result,
+        mixin = objects.mixin;
 
-    function _mixin(target, source, deep, safe) {
-        for (var key in source) {
-            //if (!source.hasOwnProperty(key)) {
-            //    continue;
-            //}
-            if (safe && target[key] !== undefined) {
-                continue;
-            }
-            if (deep && (isPlainObject(source[key]) || isArray(source[key]))) {
-                if (isPlainObject(source[key]) && !isPlainObject(target[key])) {
-                    target[key] = {};
-                }
-                if (isArray(source[key]) && !isArray(target[key])) {
-                    target[key] = [];
-                }
-                _mixin(target[key], source[key], deep, safe);
-            } else if (source[key] !== undefined) {
-                target[key] = source[key]
-            }
+    mixin(Promise.prototype,{
+        always: function(handler) {
+            //this.done(handler);
+            //this.fail(handler);
+            this.then(handler,handler);
+            return this;
+        },
+        done : function(handler) {
+            this.then(handler);
+            return this;
+        },
+        fail : function(handler) { 
+            //return mixin(Promise.prototype.catch.call(this,handler),added);
+            //return this.then(null,handler);
+            this.catch(handler);
+            return this;
         }
-        return target;
-    }
+    });
 
-    function _parseMixinArgs(args) {
-        var params = slice.call(arguments, 0),
-            target = params.shift(),
-            deep = false;
-        if (isBoolean(params[params.length - 1])) {
-            deep = params.pop();
-        }
-
-        return {
-            target: target,
-            sources: params,
-            deep: deep
-        };
-    }
-
-    function mixin() {
-        var args = _parseMixinArgs.apply(this, arguments);
-
-        args.sources.forEach(function(source) {
-            _mixin(args.target, source, args.deep, false);
-        });
-        return args.target;
-    }
-
-    function result(obj, path, fallback) {
-        if (!isArray(path)) {
-            path = [path]
-        };
-        var length = path.length;
-        if (!length) {
-          return isFunction(fallback) ? fallback.call(obj) : fallback;
-        }
-        for (var i = 0; i < length; i++) {
-          var prop = obj == null ? void 0 : obj[path[i]];
-          if (prop === void 0) {
-            prop = fallback;
-            i = length; // Ensure we don't continue iterating.
-          }
-          obj = isFunction(prop) ? prop.call(obj) : prop;
-        }
-
-        return obj;
-    }
-
-    function safeMixin() {
-        var args = _parseMixinArgs.apply(this, arguments);
-
-        args.sources.forEach(function(source) {
-            _mixin(args.target, source, args.deep, true);
-        });
-        return args.target;
-    }
-
-    function substitute( /*String*/ template,
-        /*Object|Array*/
-        map,
-        /*Function?*/
-        transform,
-        /*Object?*/
-        thisObject) {
-        // summary:
-        //    Performs parameterized substitutions on a string. Throws an
-        //    exception if any parameter is unmatched.
-        // template:
-        //    a string with expressions in the form `${key}` to be replaced or
-        //    `${key:format}` which specifies a format function. keys are case-sensitive.
-        // map:
-        //    hash to search for substitutions
-        // transform:
-        //    a function to process all parameters before substitution takes
-
-
-        thisObject = thisObject || window;
-        transform = transform ?
-            proxy(thisObject, transform) : function(v) {
-                return v;
-            };
-
-        function getObject(key, map) {
-            if (key.match(/\./)) {
-                var retVal,
-                    getValue = function(keys, obj) {
-                        var _k = keys.pop();
-                        if (_k) {
-                            if (!obj[_k]) return null;
-                            return getValue(keys, retVal = obj[_k]);
-                        } else {
-                            return retVal;
-                        }
-                    };
-                return getValue(key.split(".").reverse(), map);
-            } else {
-                return map[key];
-            }
-        }
-
-        return template.replace(/\$\{([^\s\:\}]+)(?:\:([^\s\:\}]+))?\}/g,
-            function(match, key, format) {
-                var value = getObject(key, map);
-                if (format) {
-                    value = getObject(format, thisObject).call(thisObject, value, key);
-                }
-                return transform(value, key).toString();
-            }); // String
-    }
-
-    var _uid = 1;
-
-    function uid(obj) {
-        return obj._uid || (obj._uid = _uid++);
-    }
-
-    function uniq(array) {
-        return filter.call(array, function(item, idx) {
-            return array.indexOf(item) == idx;
-        })
-    }
-
-    var idCounter = 0;
-    function uniqueId (prefix) {
-        var id = ++idCounter + '';
-        return prefix ? prefix + id : id;
-    }
 
     var Deferred = function() {
         var self = this,
             p = this.promise = new Promise(function(resolve, reject) {
                 self._resolve = resolve;
                 self._reject = reject;
-            }),
-           added = {
+            });
+
+        wrapPromise(p,self);
+
+        this[PGLISTENERS] = [];
+
+        //this.resolve = Deferred.prototype.resolve.bind(this);
+        //this.reject = Deferred.prototype.reject.bind(this);
+        //this.progress = Deferred.prototype.progress.bind(this);
+
+    };
+
+    function wrapPromise(p,d) {
+        var   added = {
                 state : function() {
-                    if (self.isResolved()) {
+                    if (d.isResolved()) {
                         return 'resolved';
                     }
-                    if (self.isRejected()) {
+                    if (d.isRejected()) {
                         return 'rejected';
                     }
                     return 'pending';
@@ -1170,36 +1567,17 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
                                 }
                             }),added);
                 },
-                always: function(handler) {
-                    //this.done(handler);
-                    //this.fail(handler);
-                    this.then(handler,handler);
-                    return this;
-                },
-                done : function(handler) {
-                    return this.then(handler);
-                },
-                fail : function(handler) { 
-                    //return mixin(Promise.prototype.catch.call(this,handler),added);
-                    return this.then(null,handler);
-                }, 
                 progress : function(handler) {
-                    self[PGLISTENERS].push(handler);
+                    d[PGLISTENERS].push(handler);
                     return this;
                 }
 
             };
 
         added.pipe = added.then;
-        mixin(p,added);
+        return mixin(p,added);
 
-        this[PGLISTENERS] = [];
-
-        //this.resolve = Deferred.prototype.resolve.bind(this);
-        //this.reject = Deferred.prototype.reject.bind(this);
-        //this.progress = Deferred.prototype.progress.bind(this);
-
-    };
+    }
 
     Deferred.prototype.resolve = function(value) {
         var args = slice.call(arguments);
@@ -1254,11 +1632,11 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
     Deferred.prototype.done  = Deferred.prototype.then;
 
     Deferred.all = function(array) {
-        return Promise.all(array);
+        return wrapPromise(Promise.all(array));
     };
 
     Deferred.first = function(array) {
-        return Promise.race(array);
+        return wrapPromise(Promise.race(array));
     };
 
 
@@ -1272,10 +1650,10 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
             } else {
                 return new Deferred().resolve(valueOrPromise);
             }
-//        } else if (!nativePromise) {
-//            var deferred = new Deferred(valueOrPromise.cancel);
-//            valueOrPromise.then(deferred.resolve, deferred.reject, deferred.progress);
-//            valueOrPromise = deferred.promise;
+        } else if (!nativePromise) {
+            var deferred = new Deferred(valueOrPromise.cancel);
+            valueOrPromise.then(proxy(deferred.resolve,deferred), proxy(deferred.reject,deferred), deferred.progress);
+            valueOrPromise = deferred.promise;
         }
 
         if (callback || errback || progback) {
@@ -1292,13 +1670,84 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
 
     Deferred.resolve = function(data) {
         var d = new Deferred();
-        d.resolve(data);
+        d.resolve.apply(d,arguments);
         return d.promise;
     };
 
     Deferred.immediate = Deferred.resolve;
 
-    var Evented = createClass({
+    return Deferred;
+});
+define('skylark-langx/async',[
+    "./Deferred",
+    "./arrays"
+],function(Deferred,arrays){
+    var each = arrays.each;
+    
+    var async = {
+        parallel : function(arr,args,ctx) {
+            var rets = [];
+            ctx = ctx || null;
+            args = args || [];
+
+            each(arr,function(i,func){
+                rets.push(func.apply(ctx,args));
+            });
+
+            return Deferred.all(rets);
+        },
+
+        series : function(arr,args,ctx) {
+            var rets = [],
+                d = new Deferred(),
+                p = d.promise;
+
+            ctx = ctx || null;
+            args = args || [];
+
+            d.resolve();
+            each(arr,function(i,func){
+                p = p.then(function(){
+                    return func.apply(ctx,args);
+                });
+                rets.push(p);
+            });
+
+            return Deferred.all(rets);
+        },
+
+        waterful : function(arr,args,ctx) {
+            var d = new Deferred(),
+                p = d.promise;
+
+            ctx = ctx || null;
+            args = args || [];
+
+            d.resolveWith(ctx,args);
+
+            each(arr,function(i,func){
+                p = p.then(func);
+            });
+            return p;
+        }
+    };
+
+	return async;	
+});
+define('skylark-langx/Evented',[
+    "./klass",
+    "./objects",
+	"./types"
+],function(klass,objects,types){
+	var slice = Array.prototype.slice,
+        isDefined = types.isDefined,
+        isPlainObject = types.isPlainObject,
+		isFunction = types.isFunction,
+		isString = types.isString,
+		isEmptyObject = types.isEmptyObject,
+		mixin = objects.mixin;
+
+    var Evented = klass({
         on: function(events, selector, data, callback, ctx, /*used internally*/ one) {
             var self = this,
                 _hub = this._hub || (this._hub = {});
@@ -1526,591 +1975,154 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
         }
     });
 
-    var Stateful = Evented.inherit({
-        init : function(attributes, options) {
-            var attrs = attributes || {};
-            options || (options = {});
-            this.cid = uniqueId(this.cidPrefix);
-            this.attributes = {};
-            if (options.collection) this.collection = options.collection;
-            if (options.parse) attrs = this.parse(attrs, options) || {};
-            var defaults = result(this, 'defaults');
-            attrs = mixin({}, defaults, attrs);
-            this.set(attrs, options);
-            this.changed = {};
-        },
+	return Evented;
 
-        // A hash of attributes whose current and previous value differ.
-        changed: null,
+});
+define('skylark-langx/strings',[
+],function(){
 
-        // The value returned during the last failed validation.
-        validationError: null,
+     /*
+     * Converts camel case into dashes.
+     * @param {String} str
+     * @return {String}
+     * @exapmle marginTop -> margin-top
+     */
+    function dasherize(str) {
+        return str.replace(/::/g, '/')
+            .replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2')
+            .replace(/([a-z\d])([A-Z])/g, '$1_$2')
+            .replace(/_/g, '-')
+            .toLowerCase();
+    }
 
-        // The default name for the JSON `id` attribute is `"id"`. MongoDB and
-        // CouchDB users may want to set this to `"_id"`.
-        idAttribute: 'id',
-
-        // The prefix is used to create the client id which is used to identify models locally.
-        // You may want to override this if you're experiencing name clashes with model ids.
-        cidPrefix: 'c',
-
-
-        // Return a copy of the model's `attributes` object.
-        toJSON: function(options) {
-          return clone(this.attributes);
-        },
-
-
-        // Get the value of an attribute.
-        get: function(attr) {
-          return this.attributes[attr];
-        },
-
-        // Returns `true` if the attribute contains a value that is not null
-        // or undefined.
-        has: function(attr) {
-          return this.get(attr) != null;
-        },
-
-        // Set a hash of model attributes on the object, firing `"change"`. This is
-        // the core primitive operation of a model, updating the data and notifying
-        // anyone who needs to know about the change in state. The heart of the beast.
-        set: function(key, val, options) {
-          if (key == null) return this;
-
-          // Handle both `"key", value` and `{key: value}` -style arguments.
-          var attrs;
-          if (typeof key === 'object') {
-            attrs = key;
-            options = val;
-          } else {
-            (attrs = {})[key] = val;
-          }
-
-          options || (options = {});
-
-          // Run validation.
-          if (!this._validate(attrs, options)) return false;
-
-          // Extract attributes and options.
-          var unset      = options.unset;
-          var silent     = options.silent;
-          var changes    = [];
-          var changing   = this._changing;
-          this._changing = true;
-
-          if (!changing) {
-            this._previousAttributes = clone(this.attributes);
-            this.changed = {};
-          }
-
-          var current = this.attributes;
-          var changed = this.changed;
-          var prev    = this._previousAttributes;
-
-          // For each `set` attribute, update or delete the current value.
-          for (var attr in attrs) {
-            val = attrs[attr];
-            if (!isEqual(current[attr], val)) changes.push(attr);
-            if (!isEqual(prev[attr], val)) {
-              changed[attr] = val;
-            } else {
-              delete changed[attr];
-            }
-            unset ? delete current[attr] : current[attr] = val;
-          }
-
-          // Update the `id`.
-          if (this.idAttribute in attrs) this.id = this.get(this.idAttribute);
-
-          // Trigger all relevant attribute changes.
-          if (!silent) {
-            if (changes.length) this._pending = options;
-            for (var i = 0; i < changes.length; i++) {
-              this.trigger('change:' + changes[i], this, current[changes[i]], options);
-            }
-          }
-
-          // You might be wondering why there's a `while` loop here. Changes can
-          // be recursively nested within `"change"` events.
-          if (changing) return this;
-          if (!silent) {
-            while (this._pending) {
-              options = this._pending;
-              this._pending = false;
-              this.trigger('change', this, options);
-            }
-          }
-          this._pending = false;
-          this._changing = false;
-          return this;
-        },
-
-        // Remove an attribute from the model, firing `"change"`. `unset` is a noop
-        // if the attribute doesn't exist.
-        unset: function(attr, options) {
-          return this.set(attr, void 0, mixin({}, options, {unset: true}));
-        },
-
-        // Clear all attributes on the model, firing `"change"`.
-        clear: function(options) {
-          var attrs = {};
-          for (var key in this.attributes) attrs[key] = void 0;
-          return this.set(attrs, mixin({}, options, {unset: true}));
-        },
-
-        // Determine if the model has changed since the last `"change"` event.
-        // If you specify an attribute name, determine if that attribute has changed.
-        hasChanged: function(attr) {
-          if (attr == null) return !isEmptyObject(this.changed);
-          return this.changed[attr] !== undefined;
-        },
-
-        // Return an object containing all the attributes that have changed, or
-        // false if there are no changed attributes. Useful for determining what
-        // parts of a view need to be updated and/or what attributes need to be
-        // persisted to the server. Unset attributes will be set to undefined.
-        // You can also pass an attributes object to diff against the model,
-        // determining if there *would be* a change.
-        changedAttributes: function(diff) {
-          if (!diff) return this.hasChanged() ? clone(this.changed) : false;
-          var old = this._changing ? this._previousAttributes : this.attributes;
-          var changed = {};
-          for (var attr in diff) {
-            var val = diff[attr];
-            if (isEqual(old[attr], val)) continue;
-            changed[attr] = val;
-          }
-          return !isEmptyObject(changed) ? changed : false;
-        },
-
-        // Get the previous value of an attribute, recorded at the time the last
-        // `"change"` event was fired.
-        previous: function(attr) {
-          if (attr == null || !this._previousAttributes) return null;
-          return this._previousAttributes[attr];
-        },
-
-        // Get all of the attributes of the model at the time of the previous
-        // `"change"` event.
-        previousAttributes: function() {
-          return clone(this._previousAttributes);
-        },
-
-        // Create a new model with identical attributes to this one.
-        clone: function() {
-          return new this.constructor(this.attributes);
-        },
-
-        // A model is new if it has never been saved to the server, and lacks an id.
-        isNew: function() {
-          return !this.has(this.idAttribute);
-        },
-
-        // Check if the model is currently in a valid state.
-        isValid: function(options) {
-          return this._validate({}, mixin({}, options, {validate: true}));
-        },
-
-        // Run validation against the next complete set of model attributes,
-        // returning `true` if all is well. Otherwise, fire an `"invalid"` event.
-        _validate: function(attrs, options) {
-          if (!options.validate || !this.validate) return true;
-          attrs = mixin({}, this.attributes, attrs);
-          var error = this.validationError = this.validate(attrs, options) || null;
-          if (!error) return true;
-          this.trigger('invalid', this, error, mixin(options, {validationError: error}));
-          return false;
+    function deserializeValue(value) {
+        try {
+            return value ?
+                value == "true" ||
+                (value == "false" ? false :
+                    value == "null" ? null :
+                    +value + "" == value ? +value :
+                    /^[\[\{]/.test(value) ? JSON.parse(value) :
+                    value) : value;
+        } catch (e) {
+            return value;
         }
-    });
+    }
 
-    var SimpleQueryEngine = function(query, options){
+    function trim(str) {
+        return str == null ? "" : String.prototype.trim.call(str);
+    }
+    function substitute( /*String*/ template,
+        /*Object|Array*/
+        map,
+        /*Function?*/
+        transform,
+        /*Object?*/
+        thisObject) {
         // summary:
-        //      Simple query engine that matches using filter functions, named filter
-        //      functions or objects by name-value on a query object hash
-        //
-        // description:
-        //      The SimpleQueryEngine provides a way of getting a QueryResults through
-        //      the use of a simple object hash as a filter.  The hash will be used to
-        //      match properties on data objects with the corresponding value given. In
-        //      other words, only exact matches will be returned.
-        //
-        //      This function can be used as a template for more complex query engines;
-        //      for example, an engine can be created that accepts an object hash that
-        //      contains filtering functions, or a string that gets evaluated, etc.
-        //
-        //      When creating a new dojo.store, simply set the store's queryEngine
-        //      field as a reference to this function.
-        //
-        // query: Object
-        //      An object hash with fields that may match fields of items in the store.
-        //      Values in the hash will be compared by normal == operator, but regular expressions
-        //      or any object that provides a test() method are also supported and can be
-        //      used to match strings by more complex expressions
-        //      (and then the regex's or object's test() method will be used to match values).
-        //
-        // options: dojo/store/api/Store.QueryOptions?
-        //      An object that contains optional information such as sort, start, and count.
-        //
-        // returns: Function
-        //      A function that caches the passed query under the field "matches".  See any
-        //      of the "query" methods on dojo.stores.
-        //
-        // example:
-        //      Define a store with a reference to this engine, and set up a query method.
-        //
-        //  |   var myStore = function(options){
-        //  |       //  ...more properties here
-        //  |       this.queryEngine = SimpleQueryEngine;
-        //  |       //  define our query method
-        //  |       this.query = function(query, options){
-        //  |           return QueryResults(this.queryEngine(query, options)(this.data));
-        //  |       };
-        //  |   };
+        //    Performs parameterized substitutions on a string. Throws an
+        //    exception if any parameter is unmatched.
+        // template:
+        //    a string with expressions in the form `${key}` to be replaced or
+        //    `${key:format}` which specifies a format function. keys are case-sensitive.
+        // map:
+        //    hash to search for substitutions
+        // transform:
+        //    a function to process all parameters before substitution takes
 
-        // create our matching query function
-        switch(typeof query){
-            default:
-                throw new Error("Can not query with a " + typeof query);
-            case "object": case "undefined":
-                var queryObject = query;
-                query = function(object){
-                    for(var key in queryObject){
-                        var required = queryObject[key];
-                        if(required && required.test){
-                            // an object can provide a test method, which makes it work with regex
-                            if(!required.test(object[key], object)){
-                                return false;
-                            }
-                        }else if(required != object[key]){
-                            return false;
-                        }
-                    }
-                    return true;
-                };
-                break;
-            case "string":
-                // named query
-                if(!this[query]){
-                    throw new Error("No filter function " + query + " was found in store");
-                }
-                query = this[query];
-                // fall through
-            case "function":
-                // fall through
-        }
-        
-        function filter(arr, callback, thisObject){
-            // summary:
-            //      Returns a new Array with those items from arr that match the
-            //      condition implemented by callback.
-            // arr: Array
-            //      the array to iterate over.
-            // callback: Function|String
-            //      a function that is invoked with three arguments (item,
-            //      index, array). The return of this function is expected to
-            //      be a boolean which determines whether the passed-in item
-            //      will be included in the returned array.
-            // thisObject: Object?
-            //      may be used to scope the call to callback
-            // returns: Array
-            // description:
-            //      This function corresponds to the JavaScript 1.6 Array.filter() method, with one difference: when
-            //      run over sparse arrays, this implementation passes the "holes" in the sparse array to
-            //      the callback function with a value of undefined. JavaScript 1.6's filter skips the holes in the sparse array.
-            //      For more details, see:
-            //      https://developer.mozilla.org/en/Core_JavaScript_1.5_Reference/Objects/Array/filter
-            // example:
-            //  | // returns [2, 3, 4]
-            //  | array.filter([1, 2, 3, 4], function(item){ return item>1; });
 
-            // TODO: do we need "Ctr" here like in map()?
-            var i = 0, l = arr && arr.length || 0, out = [], value;
-            if(l && typeof arr == "string") arr = arr.split("");
-            if(typeof callback == "string") callback = cache[callback] || buildFn(callback);
-            if(thisObject){
-                for(; i < l; ++i){
-                    value = arr[i];
-                    if(callback.call(thisObject, value, i, arr)){
-                        out.push(value);
-                    }
-                }
-            }else{
-                for(; i < l; ++i){
-                    value = arr[i];
-                    if(callback(value, i, arr)){
-                        out.push(value);
-                    }
-                }
-            }
-            return out; // Array
-        }
-
-        function execute(array){
-            // execute the whole query, first we filter
-            var results = filter(array, query);
-            // next we sort
-            var sortSet = options && options.sort;
-            if(sortSet){
-                results.sort(typeof sortSet == "function" ? sortSet : function(a, b){
-                    for(var sort, i=0; sort = sortSet[i]; i++){
-                        var aValue = a[sort.attribute];
-                        var bValue = b[sort.attribute];
-                        // valueOf enables proper comparison of dates
-                        aValue = aValue != null ? aValue.valueOf() : aValue;
-                        bValue = bValue != null ? bValue.valueOf() : bValue;
-                        if (aValue != bValue){
-                            // modified by lwf 2016/07/09
-                            //return !!sort.descending == (aValue == null || aValue > bValue) ? -1 : 1;
-                            return !!sort.descending == (aValue == null || aValue > bValue) ? -1 : 1;
-                        }
-                    }
-                    return 0;
-                });
-            }
-            // now we paginate
-            if(options && (options.start || options.count)){
-                var total = results.length;
-                results = results.slice(options.start || 0, (options.start || 0) + (options.count || Infinity));
-                results.total = total;
-            }
-            return results;
-        }
-        execute.matches = query;
-        return execute;
-    };
-
-    var QueryResults = function(results){
-        // summary:
-        //      A function that wraps the results of a store query with additional
-        //      methods.
-        // description:
-        //      QueryResults is a basic wrapper that allows for array-like iteration
-        //      over any kind of returned data from a query.  While the simplest store
-        //      will return a plain array of data, other stores may return deferreds or
-        //      promises; this wrapper makes sure that *all* results can be treated
-        //      the same.
-        //
-        //      Additional methods include `forEach`, `filter` and `map`.
-        // results: Array|dojo/promise/Promise
-        //      The result set as an array, or a promise for an array.
-        // returns:
-        //      An array-like object that can be used for iterating over.
-        // example:
-        //      Query a store and iterate over the results.
-        //
-        //  |   store.query({ prime: true }).forEach(function(item){
-        //  |       //  do something
-        //  |   });
-
-        if(!results){
-            return results;
-        }
-
-        var isPromise = !!results.then;
-        // if it is a promise it may be frozen
-        if(isPromise){
-            results = Object.delegate(results);
-        }
-        function addIterativeMethod(method){
-            // Always add the iterative methods so a QueryResults is
-            // returned whether the environment is ES3 or ES5
-            results[method] = function(){
-                var args = arguments;
-                var result = Deferred.when(results, function(results){
-                    //Array.prototype.unshift.call(args, results);
-                    return QueryResults(Array.prototype[method].apply(results, args));
-                });
-                // forEach should only return the result of when()
-                // when we're wrapping a promise
-                if(method !== "forEach" || isPromise){
-                    return result;
-                }
+        thisObject = thisObject || window;
+        transform = transform ?
+            proxy(thisObject, transform) : function(v) {
+                return v;
             };
+
+        function getObject(key, map) {
+            if (key.match(/\./)) {
+                var retVal,
+                    getValue = function(keys, obj) {
+                        var _k = keys.pop();
+                        if (_k) {
+                            if (!obj[_k]) return null;
+                            return getValue(keys, retVal = obj[_k]);
+                        } else {
+                            return retVal;
+                        }
+                    };
+                return getValue(key.split(".").reverse(), map);
+            } else {
+                return map[key];
+            }
         }
 
-        addIterativeMethod("forEach");
-        addIterativeMethod("filter");
-        addIterativeMethod("map");
-        if(results.total == null){
-            results.total = Deferred.when(results, function(results){
-                return results.length;
-            });
-        }
-        return results; // Object
-    };
-
-    var async = {
-        parallel : function(arr,args,ctx) {
-            var rets = [];
-            ctx = ctx || null;
-            args = args || [];
-
-            each(arr,function(i,func){
-                rets.push(func.apply(ctx,args));
-            });
-
-            return Deferred.all(rets);
-        },
-
-        series : function(arr,args,ctx) {
-            var rets = [],
-                d = new Deferred(),
-                p = d.promise;
-
-            ctx = ctx || null;
-            args = args || [];
-
-            d.resolve();
-            each(arr,function(i,func){
-                p = p.then(function(){
-                    return func.apply(ctx,args);
-                });
-                rets.push(p);
-            });
-
-            return Deferred.all(rets);
-        },
-
-        waterful : function(arr,args,ctx) {
-            var d = new Deferred(),
-                p = d.promise;
-
-            ctx = ctx || null;
-            args = args || [];
-
-            d.resolveWith(ctx,args);
-
-            each(arr,function(i,func){
-                p = p.then(func);
-            });
-            return p;
-        }
-    };
-
-    var ArrayStore = createClass({
-        "klassName": "ArrayStore",
-
-        "queryEngine": SimpleQueryEngine,
-        
-        "idProperty": "id",
-
-
-        get: function(id){
-            // summary:
-            //      Retrieves an object by its identity
-            // id: Number
-            //      The identity to use to lookup the object
-            // returns: Object
-            //      The object in the store that matches the given id.
-            return this.data[this.index[id]];
-        },
-
-        getIdentity: function(object){
-            return object[this.idProperty];
-        },
-
-        put: function(object, options){
-            var data = this.data,
-                index = this.index,
-                idProperty = this.idProperty;
-            var id = object[idProperty] = (options && "id" in options) ? options.id : idProperty in object ? object[idProperty] : Math.random();
-            if(id in index){
-                // object exists
-                if(options && options.overwrite === false){
-                    throw new Error("Object already exists");
+        return template.replace(/\$\{([^\s\:\}]+)(?:\:([^\s\:\}]+))?\}/g,
+            function(match, key, format) {
+                var value = getObject(key, map);
+                if (format) {
+                    value = getObject(format, thisObject).call(thisObject, value, key);
                 }
-                // replace the entry in data
-                data[index[id]] = object;
-            }else{
-                // add the new object
-                index[id] = data.push(object) - 1;
-            }
-            return id;
+                return transform(value, key).toString();
+            }); // String
+    }
+
+	return {
+        camelCase: function(str) {
+            return str.replace(/-([\da-z])/g, function(a) {
+                return a.toUpperCase().replace('-', '');
+            });
         },
 
-        add: function(object, options){
-            (options = options || {}).overwrite = false;
-            // call put with overwrite being false
-            return this.put(object, options);
+
+        dasherize: dasherize,
+
+        deserializeValue: deserializeValue,
+
+        lowerFirst: function(str) {
+            return str.charAt(0).toLowerCase() + str.slice(1);
         },
 
-        remove: function(id){
-            // summary:
-            //      Deletes an object by its identity
-            // id: Number
-            //      The identity to use to delete the object
-            // returns: Boolean
-            //      Returns true if an object was removed, falsy (undefined) if no object matched the id
-            var index = this.index;
-            var data = this.data;
-            if(id in index){
-                data.splice(index[id], 1);
-                // now we have to reindex
-                this.setData(data);
-                return true;
-            }
-        },
-        query: function(query, options){
-            // summary:
-            //      Queries the store for objects.
-            // query: Object
-            //      The query to use for retrieving objects from the store.
-            // options: dojo/store/api/Store.QueryOptions?
-            //      The optional arguments to apply to the resultset.
-            // returns: dojo/store/api/Store.QueryResults
-            //      The results of the query, extended with iterative methods.
-            //
-            // example:
-            //      Given the following store:
-            //
-            //  |   var store = new Memory({
-            //  |       data: [
-            //  |           {id: 1, name: "one", prime: false },
-            //  |           {id: 2, name: "two", even: true, prime: true},
-            //  |           {id: 3, name: "three", prime: true},
-            //  |           {id: 4, name: "four", even: true, prime: false},
-            //  |           {id: 5, name: "five", prime: true}
-            //  |       ]
-            //  |   });
-            //
-            //  ...find all items where "prime" is true:
-            //
-            //  |   var results = store.query({ prime: true });
-            //
-            //  ...or find all items where "even" is true:
-            //
-            //  |   var results = store.query({ even: true });
-            return QueryResults(this.queryEngine(query, options)(this.data));
+        serializeValue: function(value) {
+            return JSON.stringify(value)
         },
 
-        setData: function(data){
-            // summary:
-            //      Sets the given data as the source for this store, and indexes it
-            // data: Object[]
-            //      An array of objects to use as the source of data.
-            if(data.items){
-                // just for convenience with the data format IFRS expects
-                this.idProperty = data.identifier || this.idProperty;
-                data = this.data = data.items;
-            }else{
-                this.data = data;
-            }
-            this.index = {};
-            for(var i = 0, l = data.length; i < l; i++){
-                this.index[data[i][this.idProperty]] = i;
-            }
-        },
 
-        init: function(options) {
-            for(var i in options){
-                this[i] = options[i];
-            }
-            this.setData(this.data || []);
+        substitute: substitute,
+
+        trim: trim,
+
+        upperFirst: function(str) {
+            return str.charAt(0).toUpperCase() + str.slice(1);
         }
+	} ; 
 
-    });
+});
+define('skylark-langx/Xhr',[
+    "./arrays",
+    "./Deferred",
+    "./Evented",
+    "./objects",
+    "./funcs",
+    "./types"
+],function(arrays,Deferred,Evented,objects,funcs,types){
+    var each = arrays.each,
+        mixin = objects.mixin,
+        noop = funcs.noop,
+        isArray = types.isArray,
+        isFunction = types.isFunction,
+        isPlainObject = types.isPlainObject,
+        type = types.type;
+ 
+     var getAbsoluteUrl = (function() {
+        var a;
 
+        return function(url) {
+            if (!a) a = document.createElement('a');
+            a.href = url;
+
+            return a.href;
+        };
+    })();
+   
     var Xhr = (function(){
         var jsonpID = 0,
             key,
@@ -2430,6 +2442,17 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
         return Xhr;
     })();
 
+	return Xhr;	
+});
+define('skylark-langx/Restful',[
+    "./Evented",
+    "./objects",
+    "./strings",
+    "./Xhr"
+],function(Evented,objects,strings,Xhr){
+    var mixin = objects.mixin,
+        substitute = strings.substitute;
+
     var Restful = Evented.inherit({
         "klassName" : "Restful",
 
@@ -2437,7 +2460,7 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
         
         getBaseUrl : function(args) {
             //$$baseEndpoint : "/files/${fileId}/comments",
-            var baseEndpoint = String.substitute(this.baseEndpoint,args),
+            var baseEndpoint = substitute(this.baseEndpoint,args),
                 baseUrl = this.server + this.basePath + baseEndpoint;
             if (args[this.idAttribute]!==undefined) {
                 baseUrl = baseUrl + "/" + args[this.idAttribute]; 
@@ -2547,172 +2570,323 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
             mixin(this,params);
  //           this._xhr = XHRx();
        }
-
-
     });
+
+    return Restful;
+});
+define('skylark-langx/Stateful',[
+	"./Evented"
+],function(Evented){
+    var Stateful = Evented.inherit({
+        init : function(attributes, options) {
+            var attrs = attributes || {};
+            options || (options = {});
+            this.cid = uniqueId(this.cidPrefix);
+            this.attributes = {};
+            if (options.collection) this.collection = options.collection;
+            if (options.parse) attrs = this.parse(attrs, options) || {};
+            var defaults = result(this, 'defaults');
+            attrs = mixin({}, defaults, attrs);
+            this.set(attrs, options);
+            this.changed = {};
+        },
+
+        // A hash of attributes whose current and previous value differ.
+        changed: null,
+
+        // The value returned during the last failed validation.
+        validationError: null,
+
+        // The default name for the JSON `id` attribute is `"id"`. MongoDB and
+        // CouchDB users may want to set this to `"_id"`.
+        idAttribute: 'id',
+
+        // The prefix is used to create the client id which is used to identify models locally.
+        // You may want to override this if you're experiencing name clashes with model ids.
+        cidPrefix: 'c',
+
+
+        // Return a copy of the model's `attributes` object.
+        toJSON: function(options) {
+          return clone(this.attributes);
+        },
+
+
+        // Get the value of an attribute.
+        get: function(attr) {
+          return this.attributes[attr];
+        },
+
+        // Returns `true` if the attribute contains a value that is not null
+        // or undefined.
+        has: function(attr) {
+          return this.get(attr) != null;
+        },
+
+        // Set a hash of model attributes on the object, firing `"change"`. This is
+        // the core primitive operation of a model, updating the data and notifying
+        // anyone who needs to know about the change in state. The heart of the beast.
+        set: function(key, val, options) {
+          if (key == null) return this;
+
+          // Handle both `"key", value` and `{key: value}` -style arguments.
+          var attrs;
+          if (typeof key === 'object') {
+            attrs = key;
+            options = val;
+          } else {
+            (attrs = {})[key] = val;
+          }
+
+          options || (options = {});
+
+          // Run validation.
+          if (!this._validate(attrs, options)) return false;
+
+          // Extract attributes and options.
+          var unset      = options.unset;
+          var silent     = options.silent;
+          var changes    = [];
+          var changing   = this._changing;
+          this._changing = true;
+
+          if (!changing) {
+            this._previousAttributes = clone(this.attributes);
+            this.changed = {};
+          }
+
+          var current = this.attributes;
+          var changed = this.changed;
+          var prev    = this._previousAttributes;
+
+          // For each `set` attribute, update or delete the current value.
+          for (var attr in attrs) {
+            val = attrs[attr];
+            if (!isEqual(current[attr], val)) changes.push(attr);
+            if (!isEqual(prev[attr], val)) {
+              changed[attr] = val;
+            } else {
+              delete changed[attr];
+            }
+            unset ? delete current[attr] : current[attr] = val;
+          }
+
+          // Update the `id`.
+          if (this.idAttribute in attrs) this.id = this.get(this.idAttribute);
+
+          // Trigger all relevant attribute changes.
+          if (!silent) {
+            if (changes.length) this._pending = options;
+            for (var i = 0; i < changes.length; i++) {
+              this.trigger('change:' + changes[i], this, current[changes[i]], options);
+            }
+          }
+
+          // You might be wondering why there's a `while` loop here. Changes can
+          // be recursively nested within `"change"` events.
+          if (changing) return this;
+          if (!silent) {
+            while (this._pending) {
+              options = this._pending;
+              this._pending = false;
+              this.trigger('change', this, options);
+            }
+          }
+          this._pending = false;
+          this._changing = false;
+          return this;
+        },
+
+        // Remove an attribute from the model, firing `"change"`. `unset` is a noop
+        // if the attribute doesn't exist.
+        unset: function(attr, options) {
+          return this.set(attr, void 0, mixin({}, options, {unset: true}));
+        },
+
+        // Clear all attributes on the model, firing `"change"`.
+        clear: function(options) {
+          var attrs = {};
+          for (var key in this.attributes) attrs[key] = void 0;
+          return this.set(attrs, mixin({}, options, {unset: true}));
+        },
+
+        // Determine if the model has changed since the last `"change"` event.
+        // If you specify an attribute name, determine if that attribute has changed.
+        hasChanged: function(attr) {
+          if (attr == null) return !isEmptyObject(this.changed);
+          return this.changed[attr] !== undefined;
+        },
+
+        // Return an object containing all the attributes that have changed, or
+        // false if there are no changed attributes. Useful for determining what
+        // parts of a view need to be updated and/or what attributes need to be
+        // persisted to the server. Unset attributes will be set to undefined.
+        // You can also pass an attributes object to diff against the model,
+        // determining if there *would be* a change.
+        changedAttributes: function(diff) {
+          if (!diff) return this.hasChanged() ? clone(this.changed) : false;
+          var old = this._changing ? this._previousAttributes : this.attributes;
+          var changed = {};
+          for (var attr in diff) {
+            var val = diff[attr];
+            if (isEqual(old[attr], val)) continue;
+            changed[attr] = val;
+          }
+          return !isEmptyObject(changed) ? changed : false;
+        },
+
+        // Get the previous value of an attribute, recorded at the time the last
+        // `"change"` event was fired.
+        previous: function(attr) {
+          if (attr == null || !this._previousAttributes) return null;
+          return this._previousAttributes[attr];
+        },
+
+        // Get all of the attributes of the model at the time of the previous
+        // `"change"` event.
+        previousAttributes: function() {
+          return clone(this._previousAttributes);
+        },
+
+        // Create a new model with identical attributes to this one.
+        clone: function() {
+          return new this.constructor(this.attributes);
+        },
+
+        // A model is new if it has never been saved to the server, and lacks an id.
+        isNew: function() {
+          return !this.has(this.idAttribute);
+        },
+
+        // Check if the model is currently in a valid state.
+        isValid: function(options) {
+          return this._validate({}, mixin({}, options, {validate: true}));
+        },
+
+        // Run validation against the next complete set of model attributes,
+        // returning `true` if all is well. Otherwise, fire an `"invalid"` event.
+        _validate: function(attrs, options) {
+          if (!options.validate || !this.validate) return true;
+          attrs = mixin({}, this.attributes, attrs);
+          var error = this.validationError = this.validate(attrs, options) || null;
+          if (!error) return true;
+          this.trigger('invalid', this, error, mixin(options, {validationError: error}));
+          return false;
+        }
+    });
+
+	return Stateful;
+});
+define('skylark-langx/langx',[
+    "./skylark",
+    "./arrays",
+    "./ArrayStore",
+    "./aspect",
+    "./async",
+    "./Deferred",
+    "./Evented",
+    "./funcs",
+    "./klass",
+    "./objects",
+    "./Restful",
+    "./Stateful",
+    "./strings",
+    "./types",
+    "./Xhr"
+], function(skylark,arrays,ArrayStore,aspect,async,Deferred,Evented,funcs,klass,objects,Restful,Stateful,strings,types,Xhr) {
+    "use strict";
+    var toString = {}.toString,
+        concat = Array.prototype.concat,
+        indexOf = Array.prototype.indexOf,
+        slice = Array.prototype.slice,
+        filter = Array.prototype.filter,
+        mixin = objects.mixin,
+        safeMixin = objects.safeMixin,
+        isFunction = types.isFunction;
+
+
+    function createEvent(type, props) {
+        var e = new CustomEvent(type, props);
+
+        return safeMixin(e, props);
+    }
+    
+
+    function funcArg(context, arg, idx, payload) {
+        return isFunction(arg) ? arg.call(context, idx, payload) : arg;
+    }
+
+    function getQueryParams(url) {
+        var url = url || window.location.href,
+            segs = url.split("?"),
+            params = {};
+
+        if (segs.length > 1) {
+            segs[1].split("&").forEach(function(queryParam) {
+                var nv = queryParam.split('=');
+                params[nv[0]] = nv[1];
+            });
+        }
+        return params;
+    }
+
+
+    function toPixel(value) {
+        // style values can be floats, client code may want
+        // to round for integer pixels.
+        return parseFloat(value) || 0;
+    }
+
+
+    var _uid = 1;
+
+    function uid(obj) {
+        return obj._uid || (obj._uid = _uid++);
+    }
+
+    var idCounter = 0;
+    function uniqueId (prefix) {
+        var id = ++idCounter + '';
+        return prefix ? prefix + id : id;
+    }
+
 
     function langx() {
         return langx;
     }
 
     mixin(langx, {
-        after: aspect("after"),
-
-        allKeys: allKeys,
-
-        around: aspect("around"),
-
-        ArrayStore : ArrayStore,
-
-        async : async,
-        
-        before: aspect("before"),
-
-        camelCase: function(str) {
-            return str.replace(/-([\da-z])/g, function(a) {
-                return a.toUpperCase().replace('-', '');
-            });
-        },
-
-        clone: clone,
-
-        compact: compact,
-
         createEvent : createEvent,
-
-        dasherize: dasherize,
-
-        debounce: debounce,
-
-        defaults : createAssigner(allKeys, true),
-
-        delegate: delegate,
-
-        Deferred: Deferred,
-
-        Evented: Evented,
-
-        defer: defer,
-
-        deserializeValue: deserializeValue,
-
-        each: each,
-
-        first : function(items,n) {
-            if (n) {
-                return items.slice(0,n);
-            } else {
-                return items[0];
-            }
-        },
-
-        flatten: flatten,
 
         funcArg: funcArg,
 
         getQueryParams: getQueryParams,
 
-        has: has,
-
-        inArray: inArray,
-
-        isArray: isArray,
-
-        isArrayLike: isArrayLike,
-
-        isBoolean: isBoolean,
-
-        isDefined: function(v) {
-            return v !== undefined;
-        },
-
-        isDocument: isDocument,
-
-        isEmptyObject: isEmptyObject,
-
-        isEqual: isEqual,
-
-        isFunction: isFunction,
-
-        isHtmlNode: isHtmlNode,
-
-        isMatch: isMatch,
-
-        isNumber: isNumber,
-
-        isObject: isObject,
-
-        isPlainObject: isPlainObject,
-
-        isString: isString,
-
-        isSameOrigin: isSameOrigin,
-
-        isWindow: isWindow,
-
-        keys: keys,
-
-        klass: function(props, parent,mixins, options) {
-            return createClass(props, parent, mixins,options);
-        },
-
-        lowerFirst: function(str) {
-            return str.charAt(0).toLowerCase() + str.slice(1);
-        },
-
-        makeArray: makeArray,
-
-        map: map,
-
-        mixin: mixin,
-
-        noop : noop,
-
-        proxy: proxy,
-
-        removeItem: removeItem,
-
-        Restful: Restful,
-
-        result : result,
-        
-        returnTrue: function() {
-            return true;
-        },
-
-        returnFalse: function() {
-            return false;
-        },
-
-        safeMixin: safeMixin,
-
-        serializeValue: function(value) {
-            return JSON.stringify(value)
-        },
-
-        Stateful: Stateful,
-
-        substitute: substitute,
-
         toPixel: toPixel,
-
-        trim: trim,
-
-        type: type,
 
         uid: uid,
 
-        uniq: uniq,
-
         uniqueId: uniqueId,
 
-        upperFirst: function(str) {
-            return str.charAt(0).toUpperCase() + str.slice(1);
-        },
+        URL: typeof window !== "undefined" ? window.URL || window.webkitURL : null
 
-        URL: typeof window !== "undefined" ? window.URL || window.webkitURL : null,
+    });
 
-        values: values,
+
+    mixin(langx, arrays,aspect,funcs,objects,strings,types,{
+        ArrayStore : ArrayStore,
+
+        async : async,
+        
+        Deferred: Deferred,
+
+        Evented: Evented,
+
+        klass : klass,
+
+        Restful: Restful,
+        
+        Stateful: Stateful,
 
         Xhr: Xhr
 
@@ -2720,13 +2894,13 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
 
     return skylark.langx = langx;
 });
-define('skylark-utils/langx',[
+define('skylark-utils-dom/langx',[
     "skylark-langx/langx"
 ], function(langx) {
     return langx;
 });
 
-define('skylark-utils/browser',[
+define('skylark-utils-dom/browser',[
     "./skylark",
     "./langx"
 ], function(skylark,langx) {
@@ -2833,7 +3007,19 @@ define('skylark-utils/browser',[
     return skylark.browser = browser;
 });
 
-define('skylark-utils/styler',[
+define('skylark-utils/browser',[
+    "skylark-utils-dom/browser"
+], function(browser) {
+    return browser;
+});
+
+define('skylark-utils/langx',[
+    "skylark-langx/langx"
+], function(langx) {
+    return langx;
+});
+
+define('skylark-utils-dom/styler',[
     "./skylark",
     "./langx"
 ], function(skylark, langx) {
@@ -3084,7 +3270,7 @@ define('skylark-utils/styler',[
 
     return skylark.styler = styler;
 });
-define('skylark-utils/noder',[
+define('skylark-utils-dom/noder',[
     "./skylark",
     "./langx",
     "./browser",
@@ -3673,7 +3859,13 @@ define('skylark-utils/noder',[
 
     return skylark.noder = noder;
 });
-define('skylark-utils/finder',[
+define('skylark-utils/noder',[
+    "skylark-utils-dom/noder"
+], function(noder) {
+    return noder;
+});
+
+define('skylark-utils-dom/finder',[
     "./skylark",
     "./langx",
     "./browser",
@@ -4771,7 +4963,7 @@ define('skylark-utils/finder',[
 
     return skylark.finder = finder;
 });
-define('skylark-utils/datax',[
+define('skylark-utils-dom/datax',[
     "./skylark",
     "./langx",
     "./finder"
@@ -5057,7 +5249,13 @@ define('skylark-utils/datax',[
 
     return skylark.datax = datax;
 });
-define('skylark-utils/eventer',[
+define('skylark-utils/datax',[
+    "skylark-utils-dom/datax"
+], function(datax) {
+    return datax;
+});
+
+define('skylark-utils-dom/eventer',[
     "./skylark",
     "./langx",
     "./browser",
@@ -5730,7 +5928,19 @@ define('skylark-utils/eventer',[
 
     return skylark.eventer = eventer;
 });
-define('skylark-utils/geom',[
+define('skylark-utils/eventer',[
+    "skylark-utils-dom/eventer"
+], function(eventer) {
+    return eventer;
+});
+
+define('skylark-utils/finder',[
+    "skylark-utils-dom/finder"
+], function(finder) {
+    return finder;
+});
+
+define('skylark-utils-dom/geom',[
     "./skylark",
     "./langx",
     "./noder",
@@ -6624,7 +6834,7 @@ define('skylark-utils/geom',[
 
     return skylark.geom = geom;
 });
-define('skylark-utils/fx',[
+define('skylark-utils-dom/fx',[
     "./skylark",
     "./langx",
     "./browser",
@@ -7154,7 +7364,264 @@ define('skylark-utils/fx',[
 
     return skylark.fx = fx;
 });
-define('skylark-utils/query',[
+define('skylark-utils/fx',[
+    "skylark-utils-dom/fx"
+], function(fx) {
+    return fx;
+});
+
+define('skylark-utils/styler',[
+    "./skylark",
+    "./langx"
+], function(skylark, langx) {
+    var every = Array.prototype.every,
+        forEach = Array.prototype.forEach,
+        camelCase = langx.camelCase,
+        dasherize = langx.dasherize;
+
+    function maybeAddPx(name, value) {
+        return (typeof value == "number" && !cssNumber[dasherize(name)]) ? value + "px" : value
+    }
+
+    var cssNumber = {
+            'column-count': 1,
+            'columns': 1,
+            'font-weight': 1,
+            'line-height': 1,
+            'opacity': 1,
+            'z-index': 1,
+            'zoom': 1
+        },
+        classReCache = {
+
+        };
+
+    function classRE(name) {
+        return name in classReCache ?
+            classReCache[name] : (classReCache[name] = new RegExp('(^|\\s)' + name + '(\\s|$)'));
+    }
+
+    // access className property while respecting SVGAnimatedString
+    /*
+     * Adds the specified class(es) to each element in the set of matched elements.
+     * @param {HTMLElement} node
+     * @param {String} value
+     */
+    function className(node, value) {
+        var klass = node.className || '',
+            svg = klass && klass.baseVal !== undefined
+
+        if (value === undefined) return svg ? klass.baseVal : klass
+        svg ? (klass.baseVal = value) : (node.className = value)
+    }
+
+    function disabled(elm, value ) {
+        if (arguments.length < 2) {
+            return !!this.dom.disabled;
+        }
+
+        elm.disabled = value;
+
+        return this;
+    }
+
+    var elementDisplay = {};
+
+    function defaultDisplay(nodeName) {
+        var element, display
+        if (!elementDisplay[nodeName]) {
+            element = document.createElement(nodeName)
+            document.body.appendChild(element)
+            display = getComputedStyle(element, '').getPropertyValue("display")
+            element.parentNode.removeChild(element)
+            display == "none" && (display = "block")
+            elementDisplay[nodeName] = display
+        }
+        return elementDisplay[nodeName]
+    }
+    /*
+     * Display the matched elements.
+     * @param {HTMLElement} elm
+     */
+    function show(elm) {
+        styler.css(elm, "display", "");
+        if (styler.css(elm, "display") == "none") {
+            styler.css(elm, "display", defaultDisplay(elm.nodeName));
+        }
+        return this;
+    }
+
+    function isInvisible(elm) {
+        return styler.css(elm, "display") == "none" || styler.css(elm, "opacity") == 0;
+    }
+
+    /*
+     * Hide the matched elements.
+     * @param {HTMLElement} elm
+     */
+    function hide(elm) {
+        styler.css(elm, "display", "none");
+        return this;
+    }
+
+    /*
+     * Adds the specified class(es) to each element in the set of matched elements.
+     * @param {HTMLElement} elm
+     * @param {String} name
+     */
+    function addClass(elm, name) {
+        if (!name) return this
+        var cls = className(elm),
+            names;
+        if (langx.isString(name)) {
+            names = name.split(/\s+/g);
+        } else {
+            names = name;
+        }
+        names.forEach(function(klass) {
+            var re = classRE(klass);
+            if (!cls.match(re)) {
+                cls += (cls ? " " : "") + klass;
+            }
+        });
+
+        className(elm, cls);
+
+        return this;
+    }
+    /*
+     * Get the value of a computed style property for the first element in the set of matched elements or set one or more CSS properties for every matched element.
+     * @param {HTMLElement} elm
+     * @param {String} property
+     * @param {Any} value
+     */
+    function css(elm, property, value) {
+        if (arguments.length < 3) {
+            var computedStyle,
+                computedStyle = getComputedStyle(elm, '')
+            if (langx.isString(property)) {
+                return elm.style[camelCase(property)] || computedStyle.getPropertyValue(dasherize(property))
+            } else if (langx.isArrayLike(property)) {
+                var props = {}
+                forEach.call(property, function(prop) {
+                    props[prop] = (elm.style[camelCase(prop)] || computedStyle.getPropertyValue(dasherize(prop)))
+                })
+                return props
+            }
+        }
+
+        var css = '';
+        if (typeof(property) == 'string') {
+            if (!value && value !== 0) {
+                elm.style.removeProperty(dasherize(property));
+            } else {
+                css = dasherize(property) + ":" + maybeAddPx(property, value)
+            }
+        } else {
+            for (key in property) {
+                if (property[key] === undefined) {
+                    continue;
+                }
+                if (!property[key] && property[key] !== 0) {
+                    elm.style.removeProperty(dasherize(key));
+                } else {
+                    css += dasherize(key) + ':' + maybeAddPx(key, property[key]) + ';'
+                }
+            }
+        }
+
+        elm.style.cssText += ';' + css;
+        return this;
+    }
+
+    /*
+     * Determine whether any of the matched elements are assigned the given class.
+     * @param {HTMLElement} elm
+     * @param {String} name
+     */
+    function hasClass(elm, name) {
+        var re = classRE(name);
+        return elm.className && elm.className.match(re);
+    }
+
+    /*
+     * Remove a single class, multiple classes, or all classes from each element in the set of matched elements.
+     * @param {HTMLElement} elm
+     * @param {String} name
+     */
+    function removeClass(elm, name) {
+        if (name) {
+            var cls = className(elm),
+                names;
+
+            if (langx.isString(name)) {
+                names = name.split(/\s+/g);
+            } else {
+                names = name;
+            }
+
+            names.forEach(function(klass) {
+                var re = classRE(klass);
+                if (cls.match(re)) {
+                    cls = cls.replace(re, " ");
+                }
+            });
+
+            className(elm, cls.trim());
+        } else {
+            className(elm, "");
+        }
+
+        return this;
+    }
+
+    /*
+     * Add or remove one or more classes from the specified element.
+     * @param {HTMLElement} elm
+     * @param {String} name
+     * @param {} when
+     */
+    function toggleClass(elm, name, when) {
+        var self = this;
+        name.split(/\s+/g).forEach(function(klass) {
+            if (when === undefined) {
+                when = !self.hasClass(elm, klass);
+            }
+            if (when) {
+                self.addClass(elm, klass);
+            } else {
+                self.removeClass(elm, klass)
+            }
+        });
+
+        return self;
+    }
+
+    var styler = function() {
+        return styler;
+    };
+
+    langx.mixin(styler, {
+        autocssfix: false,
+        cssHooks: {
+
+        },
+
+        addClass: addClass,
+        className: className,
+        css: css,
+        disabled : disabled,        
+        hasClass: hasClass,
+        hide: hide,
+        isInvisible: isInvisible,
+        removeClass: removeClass,
+        show: show,
+        toggleClass: toggleClass
+    });
+
+    return skylark.styler = styler;
+});
+define('skylark-utils-dom/query',[
     "./skylark",
     "./langx",
     "./noder",
@@ -8048,13 +8515,570 @@ define('skylark-utils/query',[
     return skylark.query = query;
 
 });
-/**
- * skylark-jquery - The skylark plugin library for fully compatible API with jquery.
- * @author Hudaokeji Co.,Ltd
- * @version v0.9.6
- * @link www.skylarkjs.org
- * @license MIT
- */
+define('skylark-utils/query',[
+    "skylark-utils-dom/query"
+], function(query) {
+    return query;
+});
+
+define('skylark-utils/geom',[
+    "skylark-utils-dom/geom"
+], function(geom) {
+    return geom;
+});
+
+define('skylark-utils-dom/velm',[
+    "./skylark",
+    "./langx",
+    "./datax",
+    "./eventer",
+    "./finder",
+    "./fx",
+    "./geom",
+    "./noder",
+    "./styler"
+], function(skylark, langx, datax, eventer, finder, fx, geom, noder, styler) {
+    var map = Array.prototype.map,
+        slice = Array.prototype.slice;
+    /*
+     * VisualElement is a skylark class type wrapping a visule dom node,provides a number of prototype methods and supports chain calls.
+     */
+    var VisualElement = langx.klass({
+        klassName: "VisualElement",
+
+        "init": function(node) {
+            if (langx.isString(node)) {
+                node = document.getElementById(node);
+            }
+            this.domNode = node;
+        }
+    });
+    /*
+     * the VisualElement object wrapping document.body
+     */
+    var root = new VisualElement(document.body),
+        velm = function(node) {
+            if (node) {
+                return new VisualElement(node);
+            } else {
+                return root;
+            }
+        };
+    /*
+     * Extend VisualElement prototype with wrapping the specified methods.
+     * @param {ArrayLike} fn
+     * @param {Object} context
+     */
+    function _delegator(fn, context) {
+        return function() {
+            var self = this,
+                elem = self.domNode,
+                ret = fn.apply(context, [elem].concat(slice.call(arguments)));
+
+            if (ret) {
+                if (ret === context) {
+                    return self;
+                } else {
+                    if (ret instanceof HTMLElement) {
+                        ret = new VisualElement(ret);
+                    } else if (langx.isArrayLike(ret)) {
+                        ret = map.call(ret, function(el) {
+                            if (el instanceof HTMLElement) {
+                                return new VisualElement(ret);
+                            } else {
+                                return el;
+                            }
+                        })
+                    }
+                }
+            }
+            return ret;
+        };
+    }
+
+    langx.mixin(velm, {
+        batch: function(nodes, action, args) {
+            nodes.forEach(function(node) {
+                var elm = (node instanceof VisualElement) ? node : velm(node);
+                elm[action].apply(elm, args);
+            });
+
+            return this;
+        },
+
+        root: new VisualElement(document.body),
+
+        VisualElement: VisualElement,
+
+        partial: function(name, fn) {
+            var props = {};
+
+            props[name] = fn;
+
+            VisualElement.partial(props);
+        },
+
+        delegate: function(names, context) {
+            var props = {};
+
+            names.forEach(function(name) {
+                props[name] = _delegator(context[name], context);
+            });
+
+            VisualElement.partial(props);
+        }
+    });
+
+    // from ./datax
+    velm.delegate([
+        "attr",
+        "data",
+        "prop",
+        "removeAttr",
+        "removeData",
+        "text",
+        "val"
+    ], datax);
+
+    // from ./dnd
+    velm.delegate([
+        "draggable",
+        "droppable"
+    ], dnd);
+
+
+    // from ./eventer
+    velm.delegate([
+        "off",
+        "on",
+        "one",
+        "shortcuts",
+        "trigger"
+    ], eventer);
+
+    // from ./finder
+    velm.delegate([
+        "ancestor",
+        "ancestors",
+        "children",
+        "descendant",
+        "find",
+        "findAll",
+        "firstChild",
+        "lastChild",
+        "matches",
+        "nextSibling",
+        "nextSiblings",
+        "parent",
+        "previousSibling",
+        "previousSiblings",
+        "siblings"
+    ], finder);
+
+    /*
+     * find a dom element matched by the specified selector.
+     * @param {String} selector
+     */
+    velm.find = function(selector) {
+        if (selector === "body") {
+            return this.root;
+        } else {
+            return this.root.descendant(selector);
+        }
+    };
+
+    // from ./fx
+    velm.delegate([
+        "animate",
+        "fadeIn",
+        "fadeOut",
+        "fadeTo",
+        "fadeToggle",
+        "hide",
+        "scrollToTop",
+        "show",
+        "toggle"
+    ], fx);
+
+
+    // from ./geom
+    velm.delegate([
+        "borderExtents",
+        "boundingPosition",
+        "boundingRect",
+        "clientHeight",
+        "clientSize",
+        "clientWidth",
+        "contentRect",
+        "height",
+        "marginExtents",
+        "offsetParent",
+        "paddingExtents",
+        "pagePosition",
+        "pageRect",
+        "relativePosition",
+        "relativeRect",
+        "scrollIntoView",
+        "scrollLeft",
+        "scrollTop",
+        "size",
+        "width"
+    ], geom);
+
+    // from ./noder
+    velm.delegate([
+        "after",
+        "append",
+        "before",
+        "clone",
+        "contains",
+        "contents",
+        "empty",
+        "html",
+        "isChildOf",
+        "ownerDoc",
+        "prepend",
+        "remove",
+        "removeChild",
+        "replace",
+        "reverse",
+        "throb",
+        "traverse",
+        "wrapper",
+        "wrapperInner",
+        "unwrap"
+    ], noder);
+
+    // from ./styler
+    velm.delegate([
+        "addClass",
+        "className",
+        "css",
+        "hasClass",
+        "hide",
+        "isInvisible",
+        "removeClass",
+        "show",
+        "toggleClass"
+    ], styler);
+
+    // properties
+
+    var properties = [ 'position', 'left', 'top', 'right', 'bottom', 'width', 'height', 'border', 'borderLeft',
+    'borderTop', 'borderRight', 'borderBottom', 'borderColor', 'display', 'overflow', 'margin', 'marginLeft', 'marginTop', 'marginRight', 'marginBottom', 'padding', 'paddingLeft', 'paddingTop', 'paddingRight', 'paddingBottom', 'color',
+    'background', 'backgroundColor', 'opacity', 'fontSize', 'fontWeight', 'textAlign', 'textDecoration', 'textTransform', 'cursor', 'zIndex' ];
+
+    properties.forEach( function ( property ) {
+
+        var method = property;
+
+        VisualElement.prototype[method ] = function (value) {
+
+            this.css( property, value );
+
+            return this;
+
+        };
+
+    });
+
+    // events
+    var events = [ 'keyUp', 'keyDown', 'mouseOver', 'mouseOut', 'click', 'dblClick', 'change' ];
+
+    events.forEach( function ( event ) {
+
+        var method = event;
+
+        VisualElement.prototype[method ] = function ( callback ) {
+
+            this.on( event.toLowerCase(), callback);
+
+            return this;
+        };
+
+    });
+
+    return skylark.velm = velm;
+});
+define('skylark-utils/velm',[
+    "skylark-utils-dom/velm"
+], function(velm) {
+    return velm;
+});
+
+define('skylark-utils/widgets',[
+    "./skylark",
+    "./langx",
+    "./noder",
+    "./datax",
+    "./styler",
+    "./geom",
+    "./eventer",
+    "./query",
+    "./velm"
+], function(skylark,langx,noder, datax, styler, geom, eventer,query,velm) {
+	// Cached regex to split keys for `delegate`.
+	var delegateEventSplitter = /^(\S+)\s*(.*)$/,
+		slice = Array.prototype.slice;
+
+
+	function bridge( name, object ) {
+		var fullName = object.prototype.widgetFullName || name,
+			fn = {};
+
+		function _delegate (isQuery) {
+
+		}
+
+		fn[name] = function( options ) {
+			var isMethodCall = typeof options === "string";
+			var args = slice.call( arguments, 1 );
+			var returnValue = this;
+
+			if ( isMethodCall ) {
+
+				// If this is an empty collection, we need to have the instance method
+				// return undefined instead of the jQuery instance
+				if ( !this.length && options === "instance" ) {
+					returnValue = undefined;
+				} else {
+					this.each( function() {
+						var methodValue;
+						var instance = datax.data( this, fullName );
+
+						if ( options === "instance" ) {
+							returnValue = instance;
+							return false;
+						}
+
+						if ( !instance ) {
+							return $.error( "cannot call methods on " + name +
+								" prior to initialization; " +
+								"attempted to call method '" + options + "'" );
+						}
+
+						if ( !langx.isFunction( instance[ options ] ) || options.charAt( 0 ) === "_" ) {
+							return $.error( "no such method '" + options + "' for " + name +
+								" widget instance" );
+						}
+
+						methodValue = instance[ options ].apply( instance, args );
+
+						if ( methodValue !== instance && methodValue !== undefined ) {
+							returnValue = methodValue && methodValue.jquery ?
+								returnValue.pushStack( methodValue.get() ) :
+								methodValue;
+							return false;
+						}
+					} );
+				}
+			} else {
+
+				// Allow multiple hashes to be passed on init
+				if ( args.length ) {
+					options = $.widget.extend.apply( null, [ options ].concat( args ) );
+				}
+
+				this.each( function() {
+					var instance = datax.data( this, fullName );
+					if ( instance ) {
+						instance.option( options || {} );
+						if ( instance._init ) {
+							instance._init();
+						}
+					} else {
+						datax.data( this, fullName, new object( options, this ) );
+					}
+				} );
+			}
+
+			return returnValue;
+		};
+	};
+
+	function widgets() {
+	    return widgets;
+	}
+
+	var Widget = langx.Evented.inherit({
+	    init :function(el,options) {
+	    	//for supporting init(options,el)
+	        if (langx.isHtmlNode(options)) {
+	        	var _t = el,
+	        		options = el;
+	            el = options;
+	        }
+	        if (langx.isHtmlNode(el)) { 
+	        	this.el = el;
+	    	} else {
+	    		this.el = null;
+	    	}
+	        if (options) {
+	            langx.mixin(this,options);
+	        }
+	        if (!this.cid) {
+	            this.cid = langx.uniqueId('w');
+	        }
+	        this._ensureElement();
+	    },
+
+	    // The default `tagName` of a View's element is `"div"`.
+	    tagName: 'div',
+
+	    // query delegate for element lookup, scoped to DOM elements within the
+	    // current view. This should be preferred to global lookups where possible.
+	    $: function(selector) {
+	      return this.$el.find(selector);
+	    },
+
+	    // **render** is the core function that your view should override, in order
+	    // to populate its element (`this.el`), with the appropriate HTML. The
+	    // convention is for **render** to always return `this`.
+	    render: function() {
+	      return this;
+	    },
+
+	    // Remove this view by taking the element out of the DOM, and removing any
+	    // applicable Backbone.Events listeners.
+	    remove: function() {
+	      this._removeElement();
+	      this.unlistenTo();
+	      return this;
+	    },
+
+	    // Remove this view's element from the document and all event listeners
+	    // attached to it. Exposed for subclasses using an alternative DOM
+	    // manipulation API.
+	    _removeElement: function() {
+	      this.$el.remove();
+	    },
+
+	    // Change the view's element (`this.el` property) and re-delegate the
+	    // view's events on the new element.
+	    setElement: function(element) {
+	      this.undelegateEvents();
+	      this._setElement(element);
+	      this.delegateEvents();
+	      return this;
+	    },
+
+	    // Creates the `this.el` and `this.$el` references for this view using the
+	    // given `el`. `el` can be a CSS selector or an HTML string, a jQuery
+	    // context or an element. Subclasses can override this to utilize an
+	    // alternative DOM manipulation API and are only required to set the
+	    // `this.el` property.
+	    _setElement: function(el) {
+	      this.$el = widgets.$(el);
+	      this.el = this.$el[0];
+	    },
+
+	    // Set callbacks, where `this.events` is a hash of
+	    //
+	    // *{"event selector": "callback"}*
+	    //
+	    //     {
+	    //       'mousedown .title':  'edit',
+	    //       'click .button':     'save',
+	    //       'click .open':       function(e) { ... }
+	    //     }
+	    //
+	    // pairs. Callbacks will be bound to the view, with `this` set properly.
+	    // Uses event delegation for efficiency.
+	    // Omitting the selector binds the event to `this.el`.
+	    delegateEvents: function(events) {
+	      events || (events = langx.result(this, 'events'));
+	      if (!events) return this;
+	      this.undelegateEvents();
+	      for (var key in events) {
+	        var method = events[key];
+	        if (!langx.isFunction(method)) method = this[method];
+	        if (!method) continue;
+	        var match = key.match(delegateEventSplitter);
+	        this.delegate(match[1], match[2], langx.proxy(method, this));
+	      }
+	      return this;
+	    },
+
+	    // Add a single event listener to the view's element (or a child element
+	    // using `selector`). This only works for delegate-able events: not `focus`,
+	    // `blur`, and not `change`, `submit`, and `reset` in Internet Explorer.
+	    delegate: function(eventName, selector, listener) {
+	      this.$el.on(eventName + '.delegateEvents' + this.uid, selector, listener);
+	      return this;
+	    },
+
+	    // Clears all callbacks previously bound to the view by `delegateEvents`.
+	    // You usually don't need to use this, but may wish to if you have multiple
+	    // Backbone views attached to the same DOM element.
+	    undelegateEvents: function() {
+	      if (this.$el) this.$el.off('.delegateEvents' + this.uid);
+	      return this;
+	    },
+
+	    // A finer-grained `undelegateEvents` for removing a single delegated event.
+	    // `selector` and `listener` are both optional.
+	    undelegate: function(eventName, selector, listener) {
+	      this.$el.off(eventName + '.delegateEvents' + this.uid, selector, listener);
+	      return this;
+	    },
+
+	    // Produces a DOM element to be assigned to your view. Exposed for
+	    // subclasses using an alternative DOM manipulation API.
+	    _createElement: function(tagName,attrs) {
+	      return noder.createElement(tagName,attrs);
+	    },
+
+	    // Ensure that the View has a DOM element to render into.
+	    // If `this.el` is a string, pass it through `$()`, take the first
+	    // matching element, and re-assign it to `el`. Otherwise, create
+	    // an element from the `id`, `className` and `tagName` properties.
+	    _ensureElement: function() {
+	      if (!this.el) {
+	        var attrs = langx.mixin({}, langx.result(this, 'attributes'));
+	        if (this.id) attrs.id = langx.result(this, 'id');
+	        if (this.className) attrs['class'] = langx.result(this, 'className');
+	        this.setElement(this._createElement(langx.result(this, 'tagName'),attrs));
+	        this._setAttributes(attrs);
+	      } else {
+	        this.setElement(langx.result(this, 'el'));
+	      }
+	    },
+
+	    // Set attributes from a hash on this view's element.  Exposed for
+	    // subclasses using an alternative DOM manipulation API.
+	    _setAttributes: function(attributes) {
+	      this.$el.attr(attributes);
+	    },
+
+	    // Translation function, gets the message key to be translated
+	    // and an object with context specific data as arguments:
+	    i18n: function (message, context) {
+	        message = (this.messages && this.messages[message]) || message.toString();
+	        if (context) {
+	            langx.each(context, function (key, value) {
+	                message = message.replace('{' + key + '}', value);
+	            });
+	        }
+	        return message;
+	    },
+
+		});
+
+	function defineWidgetClass(name,base,prototype) {
+
+	};
+
+	langx.mixin(widgets, {
+		$ : query,
+
+		define : defineWidgetClass,
+		Widget : Widget
+	});
+
+
+	return skylark.widgets = widgets;
+});
+
 define('skylark-jquery/core',[
 	"skylark-utils/skylark",
 	"skylark-utils/browser",
@@ -8065,7 +9089,8 @@ define('skylark-jquery/core',[
 	"skylark-utils/finder",
 	"skylark-utils/fx",
 	"skylark-utils/styler",
-	"skylark-utils/query"
+	"skylark-utils/query",
+	"skylark-utils/widgets"
 ],function(skylark,browser,langx,noder,datax,eventer,finder,fx,styler,query){
 	var filter = Array.prototype.filter,
 		slice = Array.prototype.slice;
@@ -8313,6 +9338,15 @@ define('skylark-jquery/core',[
 	            curElem.css(props);
 	        }
 	    };
+
+        $._data = function(elm,propName) {
+            if (elm.hasAttribute) {
+                return datax.data(elm,propName);
+            } else {
+                return {};
+            }
+        };
+        	    
     })(query);
 
     query.parseHTML = function(html) {
@@ -8326,13 +9360,6 @@ define('skylark-jquery/core',[
     return window.jQuery = window.$ = query;
 });
 
-/**
- * skylark-jquery - The skylark plugin library for fully compatible API with jquery.
- * @author Hudaokeji Co.,Ltd
- * @version v0.9.6
- * @link www.skylarkjs.org
- * @license MIT
- */
 define('skylark-jquery/ajax',[
     "./core",
     "skylark-langx/langx"
@@ -8402,6 +9429,16 @@ define('skylark-jquery/ajax',[
     };
 
     $.ajax = function(options) {
+        if (!options) {
+            options = {
+                url :  "./"
+            };
+        } else if (langx.isString(options)) {
+            options = {
+                url :  options
+            };
+        }
+
         if ('jsonp' == options.dataType) {
             var hasPlaceholder = /\?.+=\?/.test(options.url);
 
@@ -8450,7 +9487,12 @@ define('skylark-jquery/ajax',[
         return $.ajax(options)
     }
 
+    var originalLoad = $.fn.load;
+
     $.fn.load = function(url, data, success) {
+        if ("string" != typeof url && originalLoad) {
+            return originalLoad.apply(this, arguments);
+        }
         if (!this.length) return this
         var self = this,
             options = parseArguments(url, data, success),
@@ -8519,13 +9561,6 @@ define('skylark-jquery/ajax',[
 
 });
 
-/**
- * skylark-jquery - The skylark plugin library for fully compatible API with jquery.
- * @author Hudaokeji Co.,Ltd
- * @version v0.9.6
- * @link www.skylarkjs.org
- * @license MIT
- */
 define('skylark-jquery/callbacks',[
     "./core"
 ], function($) {
@@ -8654,13 +9689,6 @@ define('skylark-jquery/callbacks',[
 
 });
 
-/**
- * skylark-jquery - The skylark plugin library for fully compatible API with jquery.
- * @author Hudaokeji Co.,Ltd
- * @version v0.9.6
- * @link www.skylarkjs.org
- * @license MIT
- */
 define('skylark-jquery/deferred',[
     "./core",
     "skylark-langx/langx"
@@ -8675,19 +9703,25 @@ define('skylark-jquery/deferred',[
         return d;
     };
 
-    $.when = langx.Deferred.when;
+    $.when = function(){
+        var p = langx.Deferred.all(langx.makeArray(arguments)),
+            originThen = p.then;
+        p.then = function(onResolved,onRejected) {
+            var handler = function(results) {
+                results = results.map(function(result){
+                    return [result];
+                });
+                return onResolved && onResolved.apply(null,results);
+            };
+            return originThen.call(p,handler,onRejected);
+        };
+        return p;
+    };
 
     return $;
 
 });
 
-/**
- * skylark-jquery - The skylark plugin library for fully compatible API with jquery.
- * @author Hudaokeji Co.,Ltd
- * @version v0.9.6
- * @link www.skylarkjs.org
- * @license MIT
- */
 define('skylark-jquery/queue',[
     "skylark-langx/langx",
     "./core",
@@ -9103,1616 +10137,6 @@ define('skylark-jquery/queue',[
 
 });
 
-define('skylark-utils/dnd',[
-    "./skylark",
-    "./langx",
-    "./noder",
-    "./datax",
-    "./finder",
-    "./geom",
-    "./eventer",
-    "./styler"
-], function(skylark, langx, noder, datax, finder, geom, eventer, styler) {
-    var on = eventer.on,
-        off = eventer.off,
-        attr = datax.attr,
-        removeAttr = datax.removeAttr,
-        offset = geom.pagePosition,
-        addClass = styler.addClass,
-        height = geom.height;
-
-
-    var DndManager = langx.Evented.inherit({
-        klassName: "DndManager",
-
-        init: function() {
-
-        },
-
-        prepare: function(draggable) {
-            var e = eventer.create("preparing", {
-                dragSource: draggable.dragSource,
-                dragHandle: draggable.dragHandle
-            });
-            draggable.trigger(e);
-            draggable.dragSource = e.dragSource;
-        },
-
-        start: function(draggable, event) {
-
-            var p = geom.pagePosition(draggable.dragSource);
-            this.draggingOffsetX = parseInt(event.pageX - p.left);
-            this.draggingOffsetY = parseInt(event.pageY - p.top)
-
-            var e = eventer.create("started", {
-                elm: draggable.elm,
-                dragSource: draggable.dragSource,
-                dragHandle: draggable.dragHandle,
-                ghost: null,
-
-                transfer: {}
-            });
-
-            draggable.trigger(e);
-
-
-            this.dragging = draggable;
-
-            if (draggable.draggingClass) {
-                styler.addClass(draggable.dragSource, draggable.draggingClass);
-            }
-
-            this.draggingGhost = e.ghost;
-            if (!this.draggingGhost) {
-                this.draggingGhost = draggable.elm;
-            }
-
-            this.draggingTransfer = e.transfer;
-            if (this.draggingTransfer) {
-
-                langx.each(this.draggingTransfer, function(key, value) {
-                    event.dataTransfer.setData(key, value);
-                });
-            }
-
-            event.dataTransfer.setDragImage(this.draggingGhost, this.draggingOffsetX, this.draggingOffsetY);
-
-            event.dataTransfer.effectAllowed = "copyMove";
-
-            var e1 = eventer.create("dndStarted", {
-                elm: e.elm,
-                dragSource: e.dragSource,
-                dragHandle: e.dragHandle,
-                ghost: e.ghost,
-                transfer: e.transfer
-            });
-
-            this.trigger(e1);
-        },
-
-        over: function() {
-
-        },
-
-        end: function(dropped) {
-            var dragging = this.dragging;
-            if (dragging) {
-                if (dragging.draggingClass) {
-                    styler.removeClass(dragging.dragSource, dragging.draggingClass);
-                }
-            }
-
-            var e = eventer.create("dndEnded", {});
-            this.trigger(e);
-
-
-            this.dragging = null;
-            this.draggingTransfer = null;
-            this.draggingGhost = null;
-            this.draggingOffsetX = null;
-            this.draggingOffsetY = null;
-        }
-    });
-
-    var manager = new DndManager(),
-        draggingHeight,
-        placeholders = [];
-
-
-
-    var Draggable = langx.Evented.inherit({
-        klassName: "Draggable",
-
-        init: function(elm, params) {
-            var self = this;
-
-            self.elm = elm;
-            self.draggingClass = params.draggingClass || "dragging",
-                self.params = langx.clone(params);
-
-            ["preparing", "started", "ended", "moving"].forEach(function(eventName) {
-                if (langx.isFunction(params[eventName])) {
-                    self.on(eventName, params[eventName]);
-                }
-            });
-
-
-            eventer.on(elm, {
-                "mousedown": function(e) {
-                    var params = self.params;
-                    if (params.handle) {
-                        self.dragHandle = finder.closest(e.target, params.handle);
-                        if (!self.dragHandle) {
-                            return;
-                        }
-                    }
-                    if (params.source) {
-                        self.dragSource = finder.closest(e.target, params.source);
-                    } else {
-                        self.dragSource = self.elm;
-                    }
-                    manager.prepare(self);
-                    if (self.dragSource) {
-                        datax.attr(self.dragSource, "draggable", 'true');
-                    }
-                },
-
-                "mouseup": function(e) {
-                    if (self.dragSource) {
-                        //datax.attr(self.dragSource, "draggable", 'false');
-                        self.dragSource = null;
-                        self.dragHandle = null;
-                    }
-                },
-
-                "dragstart": function(e) {
-                    datax.attr(self.dragSource, "draggable", 'false');
-                    manager.start(self, e);
-                },
-
-                "dragend": function(e) {
-                    eventer.stop(e);
-
-                    if (!manager.dragging) {
-                        return;
-                    }
-
-                    manager.end(false);
-                }
-            });
-
-        }
-
-    });
-
-
-    var Droppable = langx.Evented.inherit({
-        klassName: "Droppable",
-
-        init: function(elm, params) {
-            var self = this,
-                draggingClass = params.draggingClass || "dragging",
-                hoverClass,
-                activeClass,
-                acceptable = true;
-
-            self.elm = elm;
-            self._params = params;
-
-            ["started", "entered", "leaved", "dropped", "overing"].forEach(function(eventName) {
-                if (langx.isFunction(params[eventName])) {
-                    self.on(eventName, params[eventName]);
-                }
-            });
-
-            eventer.on(elm, {
-                "dragover": function(e) {
-                    e.stopPropagation()
-
-                    if (!acceptable) {
-                        return
-                    }
-
-                    var e2 = eventer.create("overing", {
-                        overElm: e.target,
-                        transfer: manager.draggingTransfer,
-                        acceptable: true
-                    });
-                    self.trigger(e2);
-
-                    if (e2.acceptable) {
-                        e.preventDefault() // allow drop
-
-                        e.dataTransfer.dropEffect = "copyMove";
-                    }
-
-                },
-
-                "dragenter": function(e) {
-                    var params = self._params,
-                        elm = self.elm;
-
-                    var e2 = eventer.create("entered", {
-                        transfer: manager.draggingTransfer
-                    });
-
-                    self.trigger(e2);
-
-                    e.stopPropagation()
-
-                    if (hoverClass && acceptable) {
-                        styler.addClass(elm, hoverClass)
-                    }
-                },
-
-                "dragleave": function(e) {
-                    var params = self._params,
-                        elm = self.elm;
-                    if (!acceptable) return false
-
-                    var e2 = eventer.create("leaved", {
-                        transfer: manager.draggingTransfer
-                    });
-
-                    self.trigger(e2);
-
-                    e.stopPropagation()
-
-                    if (hoverClass && acceptable) {
-                        styler.removeClass(elm, hoverClass);
-                    }
-                },
-
-                "drop": function(e) {
-                    var params = self._params,
-                        elm = self.elm;
-
-                    eventer.stop(e); // stops the browser from redirecting.
-
-                    if (!manager.dragging) return
-
-                    // manager.dragging.elm.removeClass('dragging');
-
-                    if (hoverClass && acceptable) {
-                        styler.addClass(elm, hoverClass)
-                    }
-
-                    var e2 = eventer.create("dropped", {
-                        transfer: manager.draggingTransfer
-                    });
-
-                    self.trigger(e2);
-
-                    manager.end(true)
-                }
-            });
-
-            manager.on("dndStarted", function(e) {
-                var e2 = eventer.create("started", {
-                    transfer: manager.draggingTransfer,
-                    acceptable: false
-                });
-
-                self.trigger(e2);
-
-                acceptable = e2.acceptable;
-                hoverClass = e2.hoverClass;
-                activeClass = e2.activeClass;
-
-                if (activeClass && acceptable) {
-                    styler.addClass(elm, activeClass);
-                }
-
-            }).on("dndEnded", function(e) {
-                var e2 = eventer.create("ended", {
-                    transfer: manager.draggingTransfer,
-                    acceptable: false
-                });
-
-                self.trigger(e2);
-
-                if (hoverClass && acceptable) {
-                    styler.removeClass(elm, hoverClass);
-                }
-                if (activeClass && acceptable) {
-                    styler.removeClass(elm, activeClass);
-                }
-
-                acceptable = false;
-                activeClass = null;
-                hoverClass = null;
-            });
-
-        }
-    });
-
-
-    /*   
-     * Make the specified element be in a moveable state.
-     * @param {HTMLElement} elm  
-     * @param { } params
-     */
-    function draggable(elm, params) {
-        return new Draggable(elm, params);
-    }
-
-    /*   
-     * Make the specified element be in a droppable state.
-     * @param {HTMLElement} elm  
-     * @param { } params
-     */
-    function droppable(elm, params) {
-        return new Droppable(elm, params);
-    }
-
-
-    function dnd() {
-        return dnd;
-    }
-
-    langx.mixin(dnd, {
-        //params ： {
-        //  target : Element or string or function
-        //  handle : Element
-        //  copy : boolean
-        //  placeHolder : "div"
-        //  hoverClass : "hover"
-        //  start : function
-        //  enter : function
-        //  over : function
-        //  leave : function
-        //  drop : function
-        //  end : function
-        //
-        //
-        //}
-        draggable: draggable,
-
-        //params ： {
-        //  accept : string or function
-        //  placeHolder
-        //
-        //
-        //
-        //}
-        droppable: droppable,
-
-        manager: manager
-
-
-    });
-
-    return skylark.dnd = dnd;
-});
-define('skylark-utils/filer',[
-    "./skylark",
-    "./langx",
-    "./datax",
-    "./eventer",
-    "./styler"
-], function(skylark, langx, datax, eventer, styler) {
-    var concat = Array.prototype.concat,
-        on = eventer.on,
-        attr = eventer.attr,
-        Deferred = langx.Deferred,
-
-        fileInput,
-        fileInputForm,
-        fileSelected,
-        maxFileSize = 1 / 0;
-
-
-    var webentry = (function() {
-        function one(entry, path) {
-            var d = new Deferred(),
-                onError = function(e) {
-                    d.reject(e);
-                };
-
-            path = path || '';
-            if (entry.isFile) {
-                entry.file(function(file) {
-                    file.relativePath = path;
-                    d.resolve(file);
-                }, onError);
-            } else if (entry.isDirectory) {
-                var dirReader = entry.createReader();
-                dirReader.readEntries(function(entries) {
-                    all(
-                        entries,
-                        path + entry.name + '/'
-                    ).then(function(files) {
-                        d.resolve(files);
-                    }).catch(onError);
-                }, onError);
-            } else {
-                // Return an empy list for file system items
-                // other than files or directories:
-                d.resolve([]);
-            }
-            return d.promise;
-        }
-
-        function all(entries, path) {
-            return Deferred.all(
-                langx.map(entries, function(entry) {
-                    return one(entry, path);
-                })
-            ).then(function() {
-                return concat.apply([], arguments);
-            });
-        }
-
-        return {
-            one: one,
-            all: all
-        };
-    })();
-
-    function dataURLtoBlob(dataurl) {
-        var arr = dataurl.split(','),
-            mime = arr[0].match(/:(.*?);/)[1],
-            bstr = atob(arr[1]),
-            n = bstr.length,
-            u8arr = new Uint8Array(n);
-        while (n--) {
-            u8arr[n] = bstr.charCodeAt(n);
-        }
-        return new Blob([u8arr], { type: mime });
-    }
-    /*
-     * Make the specified element to could accept HTML5 file drag and drop.
-     * @param {HTMLElement} elm
-     * @param {PlainObject} params
-     */
-    function dropzone(elm, params) {
-        params = params || {};
-        var hoverClass = params.hoverClass || "dropzone",
-            droppedCallback = params.dropped;
-
-        var enterdCount = 0;
-        on(elm, "dragenter", function(e) {
-            if (e.dataTransfer && e.dataTransfer.types.indexOf("Files") > -1) {
-                eventer.stop(e);
-                enterdCount++;
-                styler.addClass(elm, hoverClass)
-            }
-        });
-
-        on(elm, "dragover", function(e) {
-            if (e.dataTransfer && e.dataTransfer.types.indexOf("Files") > -1) {
-                eventer.stop(e);
-            }
-        });
-
-        on(elm, "dragleave", function(e) {
-            if (e.dataTransfer && e.dataTransfer.types.indexOf("Files") > -1) {
-                enterdCount--
-                if (enterdCount == 0) {
-                    styler.removeClass(elm, hoverClass);
-                }
-            }
-        });
-
-        on(elm, "drop", function(e) {
-            if (e.dataTransfer && e.dataTransfer.types.indexOf("Files") > -1) {
-                styler.removeClass(elm, hoverClass)
-                eventer.stop(e);
-                if (droppedCallback) {
-                    var items = e.dataTransfer.items;
-                    if (items && items.length && (items[0].webkitGetAsEntry ||
-                            items[0].getAsEntry)) {
-                        webentry.all(
-                            langx.map(items, function(item) {
-                                if (item.webkitGetAsEntry) {
-                                    return item.webkitGetAsEntry();
-                                }
-                                return item.getAsEntry();
-                            })
-                        ).then(droppedCallback);
-                    } else {
-                        droppedCallback(e.dataTransfer.files);
-                    }
-                }
-            }
-        });
-
-        return this;
-    }
-
-    function pastezone(elm, params) {
-        params = params || {};
-        var hoverClass = params.hoverClass || "pastezone",
-            pastedCallback = params.pasted;
-
-        on(elm, "paste", function(e) {
-            var items = e.originalEvent && e.originalEvent.clipboardData &&
-                e.originalEvent.clipboardData.items,
-                files = [];
-            if (items && items.length) {
-                langx.each(items, function(index, item) {
-                    var file = item.getAsFile && item.getAsFile();
-                    if (file) {
-                        files.push(file);
-                    }
-                });
-            }
-            if (pastedCallback && files.length) {
-                pastedCallback(files);
-            }
-        });
-
-        return this;
-    }
-    /*
-     * Make the specified element to pop-up the file selection dialog box when clicked , and read the contents the files selected from client file system by user.
-     * @param {HTMLElement} elm
-     * @param {PlainObject} params
-     */
-    function picker(elm, params) {
-        on(elm, "click", function(e) {
-            e.preventDefault();
-            select(params);
-        });
-        return this;
-    }
-
-    function select(params) {
-        params = params || {};
-        var directory = params.directory || false,
-            multiple = params.multiple || false,
-            fileSelected = params.picked;
-        if (!fileInput) {
-            var input = fileInput = document.createElement("input");
-
-            function selectFiles(pickedFiles) {
-                for (var i = pickedFiles.length; i--;) {
-                    if (pickedFiles[i].size > maxFileSize) {
-                        pickedFiles.splice(i, 1);
-                    }
-                }
-                fileSelected(pickedFiles);
-            }
-
-            input.type = "file";
-            input.style.position = "fixed",
-                input.style.left = 0,
-                input.style.top = 0,
-                input.style.opacity = .001,
-                document.body.appendChild(input);
-
-            input.onchange = function(e) {
-                var entries = e.target.webkitEntries || e.target.entries;
-
-                if (entries && entries.length) {
-                    webentry.all(entries).then(function(files) {
-                        selectFiles(files);
-                    });
-                } else {
-                    selectFiles(Array.prototype.slice.call(e.target.files));
-                }
-                // reset to "", so selecting the same file next time still trigger the change handler
-                input.value = "";
-            };
-        }
-        fileInput.multiple = multiple;
-        fileInput.webkitdirectory = directory;
-        fileInput.click();
-    }
-
-    function upload(params) {
-        var xoptions = langx.mixin({
-            contentRange: null, //
-
-            // The parameter name for the file form data (the request argument name).
-            // If undefined or empty, the name property of the file input field is
-            // used, or "files[]" if the file input name property is also empty,
-            // can be a string or an array of strings:
-            paramName: undefined,
-            // By default, each file of a selection is uploaded using an individual
-            // request for XHR type uploads. Set to false to upload file
-            // selections in one request each:
-            singleFileUploads: true,
-            // To limit the number of files uploaded with one XHR request,
-            // set the following option to an integer greater than 0:
-            limitMultiFileUploads: undefined,
-            // The following option limits the number of files uploaded with one
-            // XHR request to keep the request size under or equal to the defined
-            // limit in bytes:
-            limitMultiFileUploadSize: undefined,
-            // Multipart file uploads add a number of bytes to each uploaded file,
-            // therefore the following option adds an overhead for each file used
-            // in the limitMultiFileUploadSize configuration:
-            limitMultiFileUploadSizeOverhead: 512,
-            // Set the following option to true to issue all file upload requests
-            // in a sequential order:
-            sequentialUploads: false,
-            // To limit the number of concurrent uploads,
-            // set the following option to an integer greater than 0:
-            limitConcurrentUploads: undefined,
-            // By default, XHR file uploads are sent as multipart/form-data.
-            // The iframe transport is always using multipart/form-data.
-            // Set to false to enable non-multipart XHR uploads:
-            multipart: true,
-            // To upload large files in smaller chunks, set the following option
-            // to a preferred maximum chunk size. If set to 0, null or undefined,
-            // or the browser does not support the required Blob API, files will
-            // be uploaded as a whole.
-            maxChunkSize: undefined,
-            // When a non-multipart upload or a chunked multipart upload has been
-            // aborted, this option can be used to resume the upload by setting
-            // it to the size of the already uploaded bytes. This option is most
-            // useful when modifying the options object inside of the "add" or
-            // "send" callbacks, as the options are cloned for each file upload.
-            uploadedBytes: undefined,
-            // By default, failed (abort or error) file uploads are removed from the
-            // global progress calculation. Set the following option to false to
-            // prevent recalculating the global progress data:
-            recalculateProgress: true,
-            // Interval in milliseconds to calculate and trigger progress events:
-            progressInterval: 100,
-            // Interval in milliseconds to calculate progress bitrate:
-            bitrateInterval: 500,
-            // By default, uploads are started automatically when adding files:
-            autoUpload: true,
-
-            // Error and info messages:
-            messages: {
-                uploadedBytes: 'Uploaded bytes exceed file size'
-            },
-
-            // Translation function, gets the message key to be translated
-            // and an object with context specific data as arguments:
-            i18n: function(message, context) {
-                message = this.messages[message] || message.toString();
-                if (context) {
-                    langx.each(context, function(key, value) {
-                        message = message.replace('{' + key + '}', value);
-                    });
-                }
-                return message;
-            },
-
-            // Additional form data to be sent along with the file uploads can be set
-            // using this option, which accepts an array of objects with name and
-            // value properties, a function returning such an array, a FormData
-            // object (for XHR file uploads), or a simple object.
-            // The form of the first fileInput is given as parameter to the function:
-            formData: function(form) {
-                return form.serializeArray();
-            },
-
-            // The add callback is invoked as soon as files are added to the fileupload
-            // widget (via file input selection, drag & drop, paste or add API call).
-            // If the singleFileUploads option is enabled, this callback will be
-            // called once for each file in the selection for XHR file uploads, else
-            // once for each file selection.
-            //
-            // The upload starts when the submit method is invoked on the data parameter.
-            // The data object contains a files property holding the added files
-            // and allows you to override plugin options as well as define ajax settings.
-            //
-            // Listeners for this callback can also be bound the following way:
-            // .bind('fileuploadadd', func);
-            //
-            // data.submit() returns a Promise object and allows to attach additional
-            // handlers using jQuery's Deferred callbacks:
-            // data.submit().done(func).fail(func).always(func);
-            add: function(e, data) {
-                if (e.isDefaultPrevented()) {
-                    return false;
-                }
-                if (data.autoUpload || (data.autoUpload !== false &&
-                        $(this).fileupload('option', 'autoUpload'))) {
-                    data.process().done(function() {
-                        data.submit();
-                    });
-                }
-            },
-
-            // Other callbacks:
-
-            // Callback for the submit event of each file upload:
-            // submit: function (e, data) {}, // .bind('fileuploadsubmit', func);
-
-            // Callback for the start of each file upload request:
-            // send: function (e, data) {}, // .bind('fileuploadsend', func);
-
-            // Callback for successful uploads:
-            // done: function (e, data) {}, // .bind('fileuploaddone', func);
-
-            // Callback for failed (abort or error) uploads:
-            // fail: function (e, data) {}, // .bind('fileuploadfail', func);
-
-            // Callback for completed (success, abort or error) requests:
-            // always: function (e, data) {}, // .bind('fileuploadalways', func);
-
-            // Callback for upload progress events:
-            // progress: function (e, data) {}, // .bind('fileuploadprogress', func);
-
-            // Callback for global upload progress events:
-            // progressall: function (e, data) {}, // .bind('fileuploadprogressall', func);
-
-            // Callback for uploads start, equivalent to the global ajaxStart event:
-            // start: function (e) {}, // .bind('fileuploadstart', func);
-
-            // Callback for uploads stop, equivalent to the global ajaxStop event:
-            // stop: function (e) {}, // .bind('fileuploadstop', func);
-
-            // Callback for change events of the fileInput(s):
-            // change: function (e, data) {}, // .bind('fileuploadchange', func);
-
-            // Callback for paste events to the pasteZone(s):
-            // paste: function (e, data) {}, // .bind('fileuploadpaste', func);
-
-            // Callback for drop events of the dropZone(s):
-            // drop: function (e, data) {}, // .bind('fileuploaddrop', func);
-
-            // Callback for dragover events of the dropZone(s):
-            // dragover: function (e) {}, // .bind('fileuploaddragover', func);
-
-            // Callback for the start of each chunk upload request:
-            // chunksend: function (e, data) {}, // .bind('fileuploadchunksend', func);
-
-            // Callback for successful chunk uploads:
-            // chunkdone: function (e, data) {}, // .bind('fileuploadchunkdone', func);
-
-            // Callback for failed (abort or error) chunk uploads:
-            // chunkfail: function (e, data) {}, // .bind('fileuploadchunkfail', func);
-
-            // Callback for completed (success, abort or error) chunk upload requests:
-            // chunkalways: function (e, data) {}, // .bind('fileuploadchunkalways', func);
-
-            // The plugin options are used as settings object for the ajax calls.
-            // The following are jQuery ajax settings required for the file uploads:
-            processData: false,
-            contentType: false,
-            cache: false
-        }, params);
-
-        var blobSlice = function() {
-                var slice = Blob.prototype.slice || Blob.prototype.webkitSlice || Blob.prototype.mozSlice;
-                return slice.apply(this, arguments);
-            },
-            ajax = function(data) {
-                return langx.Xhr.request(data.url, data);
-            };
-
-        function initDataSettings(o) {
-            o.type = o.type || "POST";
-
-            if (!chunkedUpload(o, true)) {
-                if (!o.data) {
-                    initXHRData(o);
-                }
-                //initProgressListener(o);
-            }
-        }
-
-        function initXHRData(o) {
-            var that = this,
-                formData,
-                file = o.files[0],
-                // Ignore non-multipart setting if not supported:
-                multipart = o.multipart,
-                paramName = langx.type(o.paramName) === 'array' ?
-                o.paramName[0] : o.paramName;
-
-            o.headers = langx.mixin({}, o.headers);
-            if (o.contentRange) {
-                o.headers['Content-Range'] = o.contentRange;
-            }
-            if (!multipart) {
-                o.headers['Content-Disposition'] = 'attachment; filename="' +
-                    encodeURI(file.name) + '"';
-                o.contentType = file.type || 'application/octet-stream';
-                o.data = o.blob || file;
-            } else {
-                formData = new FormData();
-                if (o.blob) {
-                    formData.append(paramName, o.blob, file.name);
-                } else {
-                    langx.each(o.files, function(index, file) {
-                        // This check allows the tests to run with
-                        // dummy objects:
-                        formData.append(
-                            (langx.type(o.paramName) === 'array' &&
-                                o.paramName[index]) || paramName,
-                            file,
-                            file.uploadName || file.name
-                        );
-                    });
-                }
-                o.data = formData;
-            }
-            // Blob reference is not needed anymore, free memory:
-            o.blob = null;
-        }
-
-        function getTotal(files) {
-            var total = 0;
-            langx.each(files, function(index, file) {
-                total += file.size || 1;
-            });
-            return total;
-        }
-
-        function getUploadedBytes(jqXHR) {
-            var range = jqXHR.getResponseHeader('Range'),
-                parts = range && range.split('-'),
-                upperBytesPos = parts && parts.length > 1 &&
-                parseInt(parts[1], 10);
-            return upperBytesPos && upperBytesPos + 1;
-        }
-
-        function initProgressObject(obj) {
-            var progress = {
-                loaded: 0,
-                total: 0,
-                bitrate: 0
-            };
-            if (obj._progress) {
-                langx.mixin(obj._progress, progress);
-            } else {
-                obj._progress = progress;
-            }
-        }
-
-        function BitrateTimer() {
-            this.timestamp = ((Date.now) ? Date.now() : (new Date()).getTime());
-            this.loaded = 0;
-            this.bitrate = 0;
-            this.getBitrate = function(now, loaded, interval) {
-                var timeDiff = now - this.timestamp;
-                if (!this.bitrate || !interval || timeDiff > interval) {
-                    this.bitrate = (loaded - this.loaded) * (1000 / timeDiff) * 8;
-                    this.loaded = loaded;
-                    this.timestamp = now;
-                }
-                return this.bitrate;
-            };
-        }
-
-        function chunkedUpload(options, testOnly) {
-            options.uploadedBytes = options.uploadedBytes || 0;
-            var that = this,
-                file = options.files[0],
-                fs = file.size,
-                ub = options.uploadedBytes,
-                mcs = options.maxChunkSize || fs,
-                slice = blobSlice,
-                dfd = new Deferred(),
-                promise = dfd.promise,
-                jqXHR,
-                upload;
-            if (!(slice && (ub || mcs < fs)) ||
-                options.data) {
-                return false;
-            }
-            if (testOnly) {
-                return true;
-            }
-            if (ub >= fs) {
-                file.error = options.i18n('uploadedBytes');
-                return this._getXHRPromise(
-                    false,
-                    options.context, [null, 'error', file.error]
-                );
-            }
-            // The chunk upload method:
-            upload = function() {
-                // Clone the options object for each chunk upload:
-                var o = langx.mixin({}, options),
-                    currentLoaded = o._progress.loaded;
-                o.blob = slice.call(
-                    file,
-                    ub,
-                    ub + mcs,
-                    file.type
-                );
-                // Store the current chunk size, as the blob itself
-                // will be dereferenced after data processing:
-                o.chunkSize = o.blob.size;
-                // Expose the chunk bytes position range:
-                o.contentRange = 'bytes ' + ub + '-' +
-                    (ub + o.chunkSize - 1) + '/' + fs;
-                // Process the upload data (the blob and potential form data):
-                initXHRData(o);
-                // Add progress listeners for this chunk upload:
-                //initProgressListener(o);
-                jqXHR = $.ajax(o).done(function(result, textStatus, jqXHR) {
-                        ub = getUploadedBytes(jqXHR) ||
-                            (ub + o.chunkSize);
-                        // Create a progress event if no final progress event
-                        // with loaded equaling total has been triggered
-                        // for this chunk:
-                        if (currentLoaded + o.chunkSize - o._progress.loaded) {
-                            dfd.progress({
-                                lengthComputable: true,
-                                loaded: ub - o.uploadedBytes,
-                                total: ub - o.uploadedBytes
-                            });
-                        }
-                        options.uploadedBytes = o.uploadedBytes = ub;
-                        o.result = result;
-                        o.textStatus = textStatus;
-                        o.jqXHR = jqXHR;
-                        //that._trigger('chunkdone', null, o);
-                        //that._trigger('chunkalways', null, o);
-                        if (ub < fs) {
-                            // File upload not yet complete,
-                            // continue with the next chunk:
-                            upload();
-                        } else {
-                            dfd.resolveWith(
-                                o.context, [result, textStatus, jqXHR]
-                            );
-                        }
-                    })
-                    .fail(function(jqXHR, textStatus, errorThrown) {
-                        o.jqXHR = jqXHR;
-                        o.textStatus = textStatus;
-                        o.errorThrown = errorThrown;
-                        //that._trigger('chunkfail', null, o);
-                        //that._trigger('chunkalways', null, o);
-                        dfd.rejectWith(
-                            o.context, [jqXHR, textStatus, errorThrown]
-                        );
-                    });
-            };
-            //this._enhancePromise(promise);
-            promise.abort = function() {
-                return jqXHR.abort();
-            };
-            upload();
-            return promise;
-        }
-
-        initDataSettings(xoptions);
-
-        xoptions._bitrateTimer = new BitrateTimer();
-
-        var jqXhr = chunkedUpload(xoptions) || ajax(xoptions);
-
-        jqXhr.options = xoptions;
-
-        return jqXhr;
-    }
-
-    var filer = function() {
-        return filer;
-    };
-
-    langx.mixin(filer, {
-        dropzone: dropzone,
-
-        pastezone: pastezone,
-
-        picker: picker,
-
-        select: select,
-
-        upload: upload,
-
-        readFile: function(file, params) {
-            params = params || {};
-            var d = new Deferred,
-                reader = new FileReader();
-
-            reader.onload = function(evt) {
-                d.resolve(evt.target.result);
-            };
-            reader.onerror = function(e) {
-                var code = e.target.error.code;
-                if (code === 2) {
-                    alert('please don\'t open this page using protocol fill:///');
-                } else {
-                    alert('error code: ' + code);
-                }
-            };
-
-            if (params.asArrayBuffer) {
-                reader.readAsArrayBuffer(file);
-            } else if (params.asDataUrl) {
-                reader.readAsDataURL(file);
-            } else if (params.asText) {
-                reader.readAsText(file);
-            } else {
-                reader.readAsArrayBuffer(file);
-            }
-
-            return d.promise;
-        },
-
-        writeFile: function(data, name) {
-            if (window.navigator.msSaveBlob) {
-                if (langx.isString(data)) {
-                    data = dataURItoBlob(data);
-                }
-                window.navigator.msSaveBlob(data, name);
-            } else {
-                var a = document.createElement('a');
-                if (data instanceof Blob) {
-                    data = langx.URL.createObjectURL(data);
-                }
-                a.href = data;
-                a.setAttribute('download', name || 'noname');
-                a.dispatchEvent(new CustomEvent('click'));
-            }
-        }
-
-    });
-
-    return skylark.filer = filer;
-});
-define('skylark-utils/velm',[
-    "./skylark",
-    "./langx",
-    "./datax",
-    "./dnd",
-    "./eventer",
-    "./filer",
-    "./finder",
-    "./fx",
-    "./geom",
-    "./noder",
-    "./styler"
-], function(skylark, langx, datax, dnd, eventer, filer, finder, fx, geom, noder, styler) {
-    var map = Array.prototype.map,
-        slice = Array.prototype.slice;
-    /*
-     * VisualElement is a skylark class type wrapping a visule dom node,provides a number of prototype methods and supports chain calls.
-     */
-    var VisualElement = langx.klass({
-        klassName: "VisualElement",
-
-        "init": function(node) {
-            if (langx.isString(node)) {
-                node = document.getElementById(node);
-            }
-            this.domNode = node;
-        }
-    });
-    /*
-     * the VisualElement object wrapping document.body
-     */
-    var root = new VisualElement(document.body),
-        velm = function(node) {
-            if (node) {
-                return new VisualElement(node);
-            } else {
-                return root;
-            }
-        };
-    /*
-     * Extend VisualElement prototype with wrapping the specified methods.
-     * @param {ArrayLike} fn
-     * @param {Object} context
-     */
-    function _delegator(fn, context) {
-        return function() {
-            var self = this,
-                elem = self.domNode,
-                ret = fn.apply(context, [elem].concat(slice.call(arguments)));
-
-            if (ret) {
-                if (ret === context) {
-                    return self;
-                } else {
-                    if (ret instanceof HTMLElement) {
-                        ret = new VisualElement(ret);
-                    } else if (langx.isArrayLike(ret)) {
-                        ret = map.call(ret, function(el) {
-                            if (el instanceof HTMLElement) {
-                                return new VisualElement(ret);
-                            } else {
-                                return el;
-                            }
-                        })
-                    }
-                }
-            }
-            return ret;
-        };
-    }
-
-    langx.mixin(velm, {
-        batch: function(nodes, action, args) {
-            nodes.forEach(function(node) {
-                var elm = (node instanceof VisualElement) ? node : velm(node);
-                elm[action].apply(elm, args);
-            });
-
-            return this;
-        },
-
-        root: new VisualElement(document.body),
-
-        VisualElement: VisualElement,
-
-        partial: function(name, fn) {
-            var props = {};
-
-            props[name] = fn;
-
-            VisualElement.partial(props);
-        },
-
-        delegate: function(names, context) {
-            var props = {};
-
-            names.forEach(function(name) {
-                props[name] = _delegator(context[name], context);
-            });
-
-            VisualElement.partial(props);
-        }
-    });
-
-    // from ./datax
-    velm.delegate([
-        "attr",
-        "data",
-        "prop",
-        "removeAttr",
-        "removeData",
-        "text",
-        "val"
-    ], datax);
-
-    // from ./dnd
-    velm.delegate([
-        "draggable",
-        "droppable"
-    ], dnd);
-
-
-    // from ./eventer
-    velm.delegate([
-        "off",
-        "on",
-        "one",
-        "shortcuts",
-        "trigger"
-    ], eventer);
-
-    // from ./filer
-    velm.delegate([
-        "picker",
-        "dropzone"
-    ], filer);
-
-    // from ./finder
-    velm.delegate([
-        "ancestor",
-        "ancestors",
-        "children",
-        "descendant",
-        "find",
-        "findAll",
-        "firstChild",
-        "lastChild",
-        "matches",
-        "nextSibling",
-        "nextSiblings",
-        "parent",
-        "previousSibling",
-        "previousSiblings",
-        "siblings"
-    ], finder);
-
-    /*
-     * find a dom element matched by the specified selector.
-     * @param {String} selector
-     */
-    velm.find = function(selector) {
-        if (selector === "body") {
-            return this.root;
-        } else {
-            return this.root.descendant(selector);
-        }
-    };
-
-    // from ./fx
-    velm.delegate([
-        "animate",
-        "fadeIn",
-        "fadeOut",
-        "fadeTo",
-        "fadeToggle",
-        "hide",
-        "scrollToTop",
-        "show",
-        "toggle"
-    ], fx);
-
-
-    // from ./geom
-    velm.delegate([
-        "borderExtents",
-        "boundingPosition",
-        "boundingRect",
-        "clientHeight",
-        "clientSize",
-        "clientWidth",
-        "contentRect",
-        "height",
-        "marginExtents",
-        "offsetParent",
-        "paddingExtents",
-        "pagePosition",
-        "pageRect",
-        "relativePosition",
-        "relativeRect",
-        "scrollIntoView",
-        "scrollLeft",
-        "scrollTop",
-        "size",
-        "width"
-    ], geom);
-
-    // from ./mover
-    velm.delegate([
-        "draggable",
-        "droppable"
-    ], dnd);
-
-
-    // from ./noder
-    velm.delegate([
-        "after",
-        "append",
-        "before",
-        "clone",
-        "contains",
-        "contents",
-        "empty",
-        "html",
-        "isChildOf",
-        "ownerDoc",
-        "prepend",
-        "remove",
-        "removeChild",
-        "replace",
-        "reverse",
-        "throb",
-        "traverse",
-        "wrapper",
-        "wrapperInner",
-        "unwrap"
-    ], noder);
-
-    // from ./styler
-    velm.delegate([
-        "addClass",
-        "className",
-        "css",
-        "hasClass",
-        "hide",
-        "isInvisible",
-        "removeClass",
-        "show",
-        "toggleClass"
-    ], styler);
-
-    // properties
-
-    var properties = [ 'position', 'left', 'top', 'right', 'bottom', 'width', 'height', 'border', 'borderLeft',
-    'borderTop', 'borderRight', 'borderBottom', 'borderColor', 'display', 'overflow', 'margin', 'marginLeft', 'marginTop', 'marginRight', 'marginBottom', 'padding', 'paddingLeft', 'paddingTop', 'paddingRight', 'paddingBottom', 'color',
-    'background', 'backgroundColor', 'opacity', 'fontSize', 'fontWeight', 'textAlign', 'textDecoration', 'textTransform', 'cursor', 'zIndex' ];
-
-    properties.forEach( function ( property ) {
-
-        var method = property;
-
-        VisualElement.prototype[method ] = function (value) {
-
-            this.css( property, value );
-
-            return this;
-
-        };
-
-    });
-
-    // events
-    var events = [ 'keyUp', 'keyDown', 'mouseOver', 'mouseOut', 'click', 'dblClick', 'change' ];
-
-    events.forEach( function ( event ) {
-
-        var method = event;
-
-        VisualElement.prototype[method ] = function ( callback ) {
-
-            this.on( event.toLowerCase(), callback);
-
-            return this;
-        };
-
-    });
-
-    return skylark.velm = velm;
-});
-define('skylark-utils/widgets',[
-    "./skylark",
-    "./langx",
-    "./noder",
-    "./datax",
-    "./styler",
-    "./geom",
-    "./eventer",
-    "./query",
-    "./velm"
-], function(skylark,langx,noder, datax, styler, geom, eventer,query,velm) {
-	// Cached regex to split keys for `delegate`.
-	var delegateEventSplitter = /^(\S+)\s*(.*)$/,
-		slice = Array.prototype.slice;
-
-
-	function bridge( name, object ) {
-		var fullName = object.prototype.widgetFullName || name,
-			fn = {};
-
-		function _delegate (isQuery) {
-
-		}
-
-		fn[name] = function( options ) {
-			var isMethodCall = typeof options === "string";
-			var args = slice.call( arguments, 1 );
-			var returnValue = this;
-
-			if ( isMethodCall ) {
-
-				// If this is an empty collection, we need to have the instance method
-				// return undefined instead of the jQuery instance
-				if ( !this.length && options === "instance" ) {
-					returnValue = undefined;
-				} else {
-					this.each( function() {
-						var methodValue;
-						var instance = datax.data( this, fullName );
-
-						if ( options === "instance" ) {
-							returnValue = instance;
-							return false;
-						}
-
-						if ( !instance ) {
-							return $.error( "cannot call methods on " + name +
-								" prior to initialization; " +
-								"attempted to call method '" + options + "'" );
-						}
-
-						if ( !langx.isFunction( instance[ options ] ) || options.charAt( 0 ) === "_" ) {
-							return $.error( "no such method '" + options + "' for " + name +
-								" widget instance" );
-						}
-
-						methodValue = instance[ options ].apply( instance, args );
-
-						if ( methodValue !== instance && methodValue !== undefined ) {
-							returnValue = methodValue && methodValue.jquery ?
-								returnValue.pushStack( methodValue.get() ) :
-								methodValue;
-							return false;
-						}
-					} );
-				}
-			} else {
-
-				// Allow multiple hashes to be passed on init
-				if ( args.length ) {
-					options = $.widget.extend.apply( null, [ options ].concat( args ) );
-				}
-
-				this.each( function() {
-					var instance = datax.data( this, fullName );
-					if ( instance ) {
-						instance.option( options || {} );
-						if ( instance._init ) {
-							instance._init();
-						}
-					} else {
-						datax.data( this, fullName, new object( options, this ) );
-					}
-				} );
-			}
-
-			return returnValue;
-		};
-	};
-
-	function widgets() {
-	    return widgets;
-	}
-
-	var Widget = langx.Evented.inherit({
-	    init :function(el,options) {
-	    	//for supporting init(options,el)
-	        if (langx.isHtmlNode(options)) {
-	        	var _t = el,
-	        		options = el;
-	            el = options;
-	        }
-	        if (langx.isHtmlNode(el)) { 
-	        	this.el = el;
-	    	} else {
-	    		this.el = null;
-	    	}
-	        if (options) {
-	            langx.mixin(this,options);
-	        }
-	        if (!this.cid) {
-	            this.cid = langx.uniqueId('w');
-	        }
-	        this._ensureElement();
-	    },
-
-	    // The default `tagName` of a View's element is `"div"`.
-	    tagName: 'div',
-
-	    // query delegate for element lookup, scoped to DOM elements within the
-	    // current view. This should be preferred to global lookups where possible.
-	    $: function(selector) {
-	      return this.$el.find(selector);
-	    },
-
-	    // **render** is the core function that your view should override, in order
-	    // to populate its element (`this.el`), with the appropriate HTML. The
-	    // convention is for **render** to always return `this`.
-	    render: function() {
-	      return this;
-	    },
-
-	    // Remove this view by taking the element out of the DOM, and removing any
-	    // applicable Backbone.Events listeners.
-	    remove: function() {
-	      this._removeElement();
-	      this.unlistenTo();
-	      return this;
-	    },
-
-	    // Remove this view's element from the document and all event listeners
-	    // attached to it. Exposed for subclasses using an alternative DOM
-	    // manipulation API.
-	    _removeElement: function() {
-	      this.$el.remove();
-	    },
-
-	    // Change the view's element (`this.el` property) and re-delegate the
-	    // view's events on the new element.
-	    setElement: function(element) {
-	      this.undelegateEvents();
-	      this._setElement(element);
-	      this.delegateEvents();
-	      return this;
-	    },
-
-	    // Creates the `this.el` and `this.$el` references for this view using the
-	    // given `el`. `el` can be a CSS selector or an HTML string, a jQuery
-	    // context or an element. Subclasses can override this to utilize an
-	    // alternative DOM manipulation API and are only required to set the
-	    // `this.el` property.
-	    _setElement: function(el) {
-	      this.$el = widgets.$(el);
-	      this.el = this.$el[0];
-	    },
-
-	    // Set callbacks, where `this.events` is a hash of
-	    //
-	    // *{"event selector": "callback"}*
-	    //
-	    //     {
-	    //       'mousedown .title':  'edit',
-	    //       'click .button':     'save',
-	    //       'click .open':       function(e) { ... }
-	    //     }
-	    //
-	    // pairs. Callbacks will be bound to the view, with `this` set properly.
-	    // Uses event delegation for efficiency.
-	    // Omitting the selector binds the event to `this.el`.
-	    delegateEvents: function(events) {
-	      events || (events = langx.result(this, 'events'));
-	      if (!events) return this;
-	      this.undelegateEvents();
-	      for (var key in events) {
-	        var method = events[key];
-	        if (!langx.isFunction(method)) method = this[method];
-	        if (!method) continue;
-	        var match = key.match(delegateEventSplitter);
-	        this.delegate(match[1], match[2], langx.proxy(method, this));
-	      }
-	      return this;
-	    },
-
-	    // Add a single event listener to the view's element (or a child element
-	    // using `selector`). This only works for delegate-able events: not `focus`,
-	    // `blur`, and not `change`, `submit`, and `reset` in Internet Explorer.
-	    delegate: function(eventName, selector, listener) {
-	      this.$el.on(eventName + '.delegateEvents' + this.uid, selector, listener);
-	      return this;
-	    },
-
-	    // Clears all callbacks previously bound to the view by `delegateEvents`.
-	    // You usually don't need to use this, but may wish to if you have multiple
-	    // Backbone views attached to the same DOM element.
-	    undelegateEvents: function() {
-	      if (this.$el) this.$el.off('.delegateEvents' + this.uid);
-	      return this;
-	    },
-
-	    // A finer-grained `undelegateEvents` for removing a single delegated event.
-	    // `selector` and `listener` are both optional.
-	    undelegate: function(eventName, selector, listener) {
-	      this.$el.off(eventName + '.delegateEvents' + this.uid, selector, listener);
-	      return this;
-	    },
-
-	    // Produces a DOM element to be assigned to your view. Exposed for
-	    // subclasses using an alternative DOM manipulation API.
-	    _createElement: function(tagName,attrs) {
-	      return noder.createElement(tagName,attrs);
-	    },
-
-	    // Ensure that the View has a DOM element to render into.
-	    // If `this.el` is a string, pass it through `$()`, take the first
-	    // matching element, and re-assign it to `el`. Otherwise, create
-	    // an element from the `id`, `className` and `tagName` properties.
-	    _ensureElement: function() {
-	      if (!this.el) {
-	        var attrs = langx.mixin({}, langx.result(this, 'attributes'));
-	        if (this.id) attrs.id = langx.result(this, 'id');
-	        if (this.className) attrs['class'] = langx.result(this, 'className');
-	        this.setElement(this._createElement(langx.result(this, 'tagName'),attrs));
-	        this._setAttributes(attrs);
-	      } else {
-	        this.setElement(langx.result(this, 'el'));
-	      }
-	    },
-
-	    // Set attributes from a hash on this view's element.  Exposed for
-	    // subclasses using an alternative DOM manipulation API.
-	    _setAttributes: function(attributes) {
-	      this.$el.attr(attributes);
-	    },
-
-	    // Translation function, gets the message key to be translated
-	    // and an object with context specific data as arguments:
-	    i18n: function (message, context) {
-	        message = (this.messages && this.messages[message]) || message.toString();
-	        if (context) {
-	            langx.each(context, function (key, value) {
-	                message = message.replace('{' + key + '}', value);
-	            });
-	        }
-	        return message;
-	    },
-
-		});
-
-	function defineWidgetClass(name,base,prototype) {
-
-	};
-
-	langx.mixin(widgets, {
-		$ : query,
-
-		define : defineWidgetClass,
-		Widget : Widget
-	});
-
-
-	return skylark.widgets = widgets;
-});
-
-/**
- * skylark-jquery - The skylark plugin library for fully compatible API with jquery.
- * @author Hudaokeji Co.,Ltd
- * @version v0.9.6
- * @link www.skylarkjs.org
- * @license MIT
- */
 define('skylark-jquery/main',[
     "./core",
     "./ajax",
@@ -11281,10 +10705,12 @@ define( 'skylark-jqueryui/unique-id',[ "skylark-jquery", "./version" ], function
 //>>docs: http://api.jqueryui.com/jQuery.widget/
 //>>demos: http://jqueryui.com/widget/
 
-define( 'skylark-jqueryui/widget',[ "skylark-jquery", "./version" ],  function( $ ) {
-
-	var langx = $.skylark.langx,
-		swidgets = $.skylark.widgets;
+define( 'skylark-jqueryui/widget',[ 
+	"skylark-langx/langx",
+	"skylark-utils/widgets",
+	"skylark-jquery", 
+	"./version" 
+],  function(langx,swidgets, $ ) {
 
 	var widgetUuid = 0;
 	var widgetHasOwnProperty = Array.prototype.hasOwnProperty;
@@ -11304,7 +10730,7 @@ define( 'skylark-jqueryui/widget',[ "skylark-jquery", "./version" ],  function( 
 			orig( elems );
 		};
 	} )( $.cleanData );
-
+	
 	$.widget = function( name, base, prototype ) {
 		var existingConstructor, constructor, basePrototype;
 
@@ -11556,7 +10982,7 @@ define( 'skylark-jqueryui/widget',[ "skylark-jquery", "./version" ],  function( 
 	};
 
 
-	$.Widget = 	 swidgets.Widget.inherit({
+	$.Widget = 	 langx.Evented.inherit({
 		widgetName: "widget",
 		widgetEventPrefix: "",
 		defaultElement: "<div>",
@@ -21254,6 +20680,494 @@ return $.ui.dialog;
 });
 
 /*!
+ * jQuery UI Droppable @VERSION
+ * http://jqueryui.com
+ *
+ * Copyright jQuery Foundation and other contributors
+ * Released under the MIT license.
+ * http://jquery.org/license
+ */
+
+//>>label: Droppable
+//>>group: Interactions
+//>>description: Enables drop targets for draggable elements.
+//>>docs: http://api.jqueryui.com/droppable/
+//>>demos: http://jqueryui.com/droppable/
+
+define( 'skylark-jqueryui/widgets/droppable',[
+			"skylark-jquery",
+			"./draggable",
+			"./mouse",
+			"../version",
+			"../widget"
+],function( $ ) {
+
+$.widget( "ui.droppable", {
+	version: "@VERSION",
+	widgetEventPrefix: "drop",
+	options: {
+		accept: "*",
+		addClasses: true,
+		greedy: false,
+		scope: "default",
+		tolerance: "intersect",
+
+		// Callbacks
+		activate: null,
+		deactivate: null,
+		drop: null,
+		out: null,
+		over: null
+	},
+	_create: function() {
+
+		var proportions,
+			o = this.options,
+			accept = o.accept;
+
+		this.isover = false;
+		this.isout = true;
+
+		this.accept = $.isFunction( accept ) ? accept : function( d ) {
+			return d.is( accept );
+		};
+
+		this.proportions = function( /* valueToWrite */ ) {
+			if ( arguments.length ) {
+
+				// Store the droppable's proportions
+				proportions = arguments[ 0 ];
+			} else {
+
+				// Retrieve or derive the droppable's proportions
+				return proportions ?
+					proportions :
+					proportions = {
+						width: this.element[ 0 ].offsetWidth,
+						height: this.element[ 0 ].offsetHeight
+					};
+			}
+		};
+
+		this._addToManager( o.scope );
+
+		o.addClasses && this._addClass( "ui-droppable" );
+
+	},
+
+	_addToManager: function( scope ) {
+
+		// Add the reference and positions to the manager
+		$.ui.ddmanager.droppables[ scope ] = $.ui.ddmanager.droppables[ scope ] || [];
+		$.ui.ddmanager.droppables[ scope ].push( this );
+	},
+
+	_splice: function( drop ) {
+		var i = 0;
+		for ( ; i < drop.length; i++ ) {
+			if ( drop[ i ] === this ) {
+				drop.splice( i, 1 );
+			}
+		}
+	},
+
+	_destroy: function() {
+		var drop = $.ui.ddmanager.droppables[ this.options.scope ];
+
+		this._splice( drop );
+	},
+
+	_setOption: function( key, value ) {
+
+		if ( key === "accept" ) {
+			this.accept = $.isFunction( value ) ? value : function( d ) {
+				return d.is( value );
+			};
+		} else if ( key === "scope" ) {
+			var drop = $.ui.ddmanager.droppables[ this.options.scope ];
+
+			this._splice( drop );
+			this._addToManager( value );
+		}
+
+		this._super( key, value );
+	},
+
+	_activate: function( event ) {
+		var draggable = $.ui.ddmanager.current;
+
+		this._addActiveClass();
+		if ( draggable ) {
+			this._trigger( "activate", event, this.ui( draggable ) );
+		}
+	},
+
+	_deactivate: function( event ) {
+		var draggable = $.ui.ddmanager.current;
+
+		this._removeActiveClass();
+		if ( draggable ) {
+			this._trigger( "deactivate", event, this.ui( draggable ) );
+		}
+	},
+
+	_over: function( event ) {
+
+		var draggable = $.ui.ddmanager.current;
+
+		// Bail if draggable and droppable are same element
+		if ( !draggable || ( draggable.currentItem ||
+				draggable.element )[ 0 ] === this.element[ 0 ] ) {
+			return;
+		}
+
+		if ( this.accept.call( this.element[ 0 ], ( draggable.currentItem ||
+				draggable.element ) ) ) {
+			this._addHoverClass();
+			this._trigger( "over", event, this.ui( draggable ) );
+		}
+
+	},
+
+	_out: function( event ) {
+
+		var draggable = $.ui.ddmanager.current;
+
+		// Bail if draggable and droppable are same element
+		if ( !draggable || ( draggable.currentItem ||
+				draggable.element )[ 0 ] === this.element[ 0 ] ) {
+			return;
+		}
+
+		if ( this.accept.call( this.element[ 0 ], ( draggable.currentItem ||
+				draggable.element ) ) ) {
+			this._removeHoverClass();
+			this._trigger( "out", event, this.ui( draggable ) );
+		}
+
+	},
+
+	_drop: function( event, custom ) {
+
+		var draggable = custom || $.ui.ddmanager.current,
+			childrenIntersection = false;
+
+		// Bail if draggable and droppable are same element
+		if ( !draggable || ( draggable.currentItem ||
+				draggable.element )[ 0 ] === this.element[ 0 ] ) {
+			return false;
+		}
+
+		this.element
+			.find( ":data(ui-droppable)" )
+			.not( ".ui-draggable-dragging" )
+			.each( function() {
+				var inst = $( this ).droppable( "instance" );
+				if (
+					inst.options.greedy &&
+					!inst.options.disabled &&
+					inst.options.scope === draggable.options.scope &&
+					inst.accept.call(
+						inst.element[ 0 ], ( draggable.currentItem || draggable.element )
+					) &&
+					$.ui.intersect(
+						draggable,
+						$.extend( inst, { offset: inst.element.offset() } ),
+						inst.options.tolerance, event
+					)
+				) {
+					childrenIntersection = true;
+					return false; }
+			} );
+		if ( childrenIntersection ) {
+			return false;
+		}
+
+		if ( this.accept.call( this.element[ 0 ],
+				( draggable.currentItem || draggable.element ) ) ) {
+			this._removeActiveClass();
+			this._removeHoverClass();
+
+			this._trigger( "drop", event, this.ui( draggable ) );
+			return this.element;
+		}
+
+		return false;
+
+	},
+
+	ui: function( c ) {
+		return {
+			draggable: ( c.currentItem || c.element ),
+			helper: c.helper,
+			position: c.position,
+			offset: c.positionAbs
+		};
+	},
+
+	// Extension points just to make backcompat sane and avoid duplicating logic
+	// TODO: Remove in 1.13 along with call to it below
+	_addHoverClass: function() {
+		this._addClass( "ui-droppable-hover" );
+	},
+
+	_removeHoverClass: function() {
+		this._removeClass( "ui-droppable-hover" );
+	},
+
+	_addActiveClass: function() {
+		this._addClass( "ui-droppable-active" );
+	},
+
+	_removeActiveClass: function() {
+		this._removeClass( "ui-droppable-active" );
+	}
+} );
+
+$.ui.intersect = ( function() {
+	function isOverAxis( x, reference, size ) {
+		return ( x >= reference ) && ( x < ( reference + size ) );
+	}
+
+	return function( draggable, droppable, toleranceMode, event ) {
+
+		if ( !droppable.offset ) {
+			return false;
+		}
+
+		var x1 = ( draggable.positionAbs ||
+				draggable.position.absolute ).left + draggable.margins.left,
+			y1 = ( draggable.positionAbs ||
+				draggable.position.absolute ).top + draggable.margins.top,
+			x2 = x1 + draggable.helperProportions.width,
+			y2 = y1 + draggable.helperProportions.height,
+			l = droppable.offset.left,
+			t = droppable.offset.top,
+			r = l + droppable.proportions().width,
+			b = t + droppable.proportions().height;
+
+		switch ( toleranceMode ) {
+		case "fit":
+			return ( l <= x1 && x2 <= r && t <= y1 && y2 <= b );
+		case "intersect":
+			return ( l < x1 + ( draggable.helperProportions.width / 2 ) && // Right Half
+				x2 - ( draggable.helperProportions.width / 2 ) < r && // Left Half
+				t < y1 + ( draggable.helperProportions.height / 2 ) && // Bottom Half
+				y2 - ( draggable.helperProportions.height / 2 ) < b ); // Top Half
+		case "pointer":
+			return isOverAxis( event.pageY, t, droppable.proportions().height ) &&
+				isOverAxis( event.pageX, l, droppable.proportions().width );
+		case "touch":
+			return (
+				( y1 >= t && y1 <= b ) || // Top edge touching
+				( y2 >= t && y2 <= b ) || // Bottom edge touching
+				( y1 < t && y2 > b ) // Surrounded vertically
+			) && (
+				( x1 >= l && x1 <= r ) || // Left edge touching
+				( x2 >= l && x2 <= r ) || // Right edge touching
+				( x1 < l && x2 > r ) // Surrounded horizontally
+			);
+		default:
+			return false;
+		}
+	};
+} )();
+
+/*
+	This manager tracks offsets of draggables and droppables
+*/
+$.ui.ddmanager = {
+	current: null,
+	droppables: { "default": [] },
+	prepareOffsets: function( t, event ) {
+
+		var i, j,
+			m = $.ui.ddmanager.droppables[ t.options.scope ] || [],
+			type = event ? event.type : null, // workaround for #2317
+			list = ( t.currentItem || t.element ).find( ":data(ui-droppable)" ).addBack();
+
+		droppablesLoop: for ( i = 0; i < m.length; i++ ) {
+
+			// No disabled and non-accepted
+			if ( m[ i ].options.disabled || ( t && !m[ i ].accept.call( m[ i ].element[ 0 ],
+					( t.currentItem || t.element ) ) ) ) {
+				continue;
+			}
+
+			// Filter out elements in the current dragged item
+			for ( j = 0; j < list.length; j++ ) {
+				if ( list[ j ] === m[ i ].element[ 0 ] ) {
+					m[ i ].proportions().height = 0;
+					continue droppablesLoop;
+				}
+			}
+
+			m[ i ].visible = m[ i ].element.css( "display" ) !== "none";
+			if ( !m[ i ].visible ) {
+				continue;
+			}
+
+			// Activate the droppable if used directly from draggables
+			if ( type === "mousedown" ) {
+				m[ i ]._activate.call( m[ i ], event );
+			}
+
+			m[ i ].offset = m[ i ].element.offset();
+			m[ i ].proportions( {
+				width: m[ i ].element[ 0 ].offsetWidth,
+				height: m[ i ].element[ 0 ].offsetHeight
+			} );
+
+		}
+
+	},
+	drop: function( draggable, event ) {
+
+		var dropped = false;
+
+		// Create a copy of the droppables in case the list changes during the drop (#9116)
+		$.each( ( $.ui.ddmanager.droppables[ draggable.options.scope ] || [] ).slice(), function() {
+
+			if ( !this.options ) {
+				return;
+			}
+			if ( !this.options.disabled && this.visible &&
+					$.ui.intersect( draggable, this, this.options.tolerance, event ) ) {
+				dropped = this._drop.call( this, event ) || dropped;
+			}
+
+			if ( !this.options.disabled && this.visible && this.accept.call( this.element[ 0 ],
+					( draggable.currentItem || draggable.element ) ) ) {
+				this.isout = true;
+				this.isover = false;
+				this._deactivate.call( this, event );
+			}
+
+		} );
+		return dropped;
+
+	},
+	dragStart: function( draggable, event ) {
+
+		// Listen for scrolling so that if the dragging causes scrolling the position of the
+		// droppables can be recalculated (see #5003)
+		draggable.element.parentsUntil( "body" ).on( "scroll.droppable", function() {
+			if ( !draggable.options.refreshPositions ) {
+				$.ui.ddmanager.prepareOffsets( draggable, event );
+			}
+		} );
+	},
+	drag: function( draggable, event ) {
+
+		// If you have a highly dynamic page, you might try this option. It renders positions
+		// every time you move the mouse.
+		if ( draggable.options.refreshPositions ) {
+			$.ui.ddmanager.prepareOffsets( draggable, event );
+		}
+
+		// Run through all droppables and check their positions based on specific tolerance options
+		$.each( $.ui.ddmanager.droppables[ draggable.options.scope ] || [], function() {
+
+			if ( this.options.disabled || this.greedyChild || !this.visible ) {
+				return;
+			}
+
+			var parentInstance, scope, parent,
+				intersects = $.ui.intersect( draggable, this, this.options.tolerance, event ),
+				c = !intersects && this.isover ?
+					"isout" :
+					( intersects && !this.isover ? "isover" : null );
+			if ( !c ) {
+				return;
+			}
+
+			if ( this.options.greedy ) {
+
+				// find droppable parents with same scope
+				scope = this.options.scope;
+				parent = this.element.parents( ":data(ui-droppable)" ).filter( function() {
+					return $( this ).droppable( "instance" ).options.scope === scope;
+				} );
+
+				if ( parent.length ) {
+					parentInstance = $( parent[ 0 ] ).droppable( "instance" );
+					parentInstance.greedyChild = ( c === "isover" );
+				}
+			}
+
+			// We just moved into a greedy child
+			if ( parentInstance && c === "isover" ) {
+				parentInstance.isover = false;
+				parentInstance.isout = true;
+				parentInstance._out.call( parentInstance, event );
+			}
+
+			this[ c ] = true;
+			this[ c === "isout" ? "isover" : "isout" ] = false;
+			this[ c === "isover" ? "_over" : "_out" ].call( this, event );
+
+			// We just moved out of a greedy child
+			if ( parentInstance && c === "isout" ) {
+				parentInstance.isout = false;
+				parentInstance.isover = true;
+				parentInstance._over.call( parentInstance, event );
+			}
+		} );
+
+	},
+	dragStop: function( draggable, event ) {
+		draggable.element.parentsUntil( "body" ).off( "scroll.droppable" );
+
+		// Call prepareOffsets one final time since IE does not fire return scroll events when
+		// overflow was caused by drag (see #5003)
+		if ( !draggable.options.refreshPositions ) {
+			$.ui.ddmanager.prepareOffsets( draggable, event );
+		}
+	}
+};
+
+// DEPRECATED
+// TODO: switch return back to widget declaration at top of file when this is removed
+if ( $.uiBackCompat !== false ) {
+
+	// Backcompat for activeClass and hoverClass options
+	$.widget( "ui.droppable", $.ui.droppable, {
+		options: {
+			hoverClass: false,
+			activeClass: false
+		},
+		_addActiveClass: function() {
+			this._super();
+			if ( this.options.activeClass ) {
+				this.element.addClass( this.options.activeClass );
+			}
+		},
+		_removeActiveClass: function() {
+			this._super();
+			if ( this.options.activeClass ) {
+				this.element.removeClass( this.options.activeClass );
+			}
+		},
+		_addHoverClass: function() {
+			this._super();
+			if ( this.options.hoverClass ) {
+				this.element.addClass( this.options.hoverClass );
+			}
+		},
+		_removeHoverClass: function() {
+			this._super();
+			if ( this.options.hoverClass ) {
+				this.element.removeClass( this.options.hoverClass );
+			}
+		}
+	} );
+}
+
+return $.ui.droppable;
+
+});
+
+/*!
  * jQuery UI Progressbar @VERSION
  * http://jqueryui.com
  *
@@ -29515,6 +29429,7 @@ define( 'skylark-jqueryui/main',[
 	"./widgets/datepicker",
 	"./widgets/dialog",
 	"./widgets/draggable",
+	"./widgets/droppable",
 	"./widgets/menu",
 	"./widgets/mouse",
 	"./widgets/progressbar",

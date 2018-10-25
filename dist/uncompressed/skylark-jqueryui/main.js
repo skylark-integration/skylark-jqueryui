@@ -23,6 +23,7 @@ define( [
 	"./widgets/datepicker",
 	"./widgets/dialog",
 	"./widgets/draggable",
+	"./widgets/droppable",
 	"./widgets/menu",
 	"./widgets/mouse",
 	"./widgets/progressbar",
