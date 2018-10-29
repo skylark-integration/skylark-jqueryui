@@ -1946,7 +1946,11 @@ return $.widget( "ui.accordion", {
 //>>docs: http://api.jqueryui.com/position/
 //>>demos: http://jqueryui.com/position/
 
-define( 'skylark-jqueryui/position',[ "skylark-jquery", "./version" ], function( $ ) {
+define('skylark-jqueryui/position',[ 
+	"skylark-jquery", 
+	"./version" 
+], function( $ ) {
+/*	
 ( function() {
 var cachedScrollbarWidth,
 	max = Math.max,
@@ -2413,9 +2417,9 @@ $.ui.position = {
 };
 
 } )();
-
 return $.ui.position;
-
+*/
+	// use skylark-utils
 });
 
 /*!
