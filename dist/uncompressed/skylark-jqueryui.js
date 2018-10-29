@@ -175,64 +175,13 @@ define( 'skylark-jqueryui/disable-selection',[ "skylark-jquery", "./version" ], 
 //>>description: Selects elements which can be focused.
 //>>docs: http://api.jqueryui.com/focusable-selector/
 
-define( 'skylark-jqueryui/focusable',[ "skylark-jquery", "./version" ], function( $ ) {
+define('skylark-jqueryui/focusable',[ 
+	"skylark-utils-dom/query", 
+	"skylark-utils-dom/noder", 
+	"./version" 
+], function( $,noder ) {
 
-	// Selectors
-	$.ui.focusable = function( element, hasTabindex ) {
-		var map, mapName, img, focusableIfVisible, fieldset,
-			nodeName = element.nodeName.toLowerCase();
-
-		if ( "area" === nodeName ) {
-			map = element.parentNode;
-			mapName = map.name;
-			if ( !element.href || !mapName || map.nodeName.toLowerCase() !== "map" ) {
-				return false;
-			}
-			img = $( "img[usemap='#" + mapName + "']" );
-			return img.length > 0 && img.is( ":visible" );
-		}
-
-		if ( /^(input|select|textarea|button|object)$/.test( nodeName ) ) {
-			focusableIfVisible = !element.disabled;
-
-			if ( focusableIfVisible ) {
-
-				// Form controls within a disabled fieldset are disabled.
-				// However, controls within the fieldset's legend do not get disabled.
-				// Since controls generally aren't placed inside legends, we skip
-				// this portion of the check.
-				fieldset = $( element ).closest( "fieldset" )[ 0 ];
-				if ( fieldset ) {
-					focusableIfVisible = !fieldset.disabled;
-				}
-			}
-		} else if ( "a" === nodeName ) {
-			focusableIfVisible = element.href || hasTabindex;
-		} else {
-			focusableIfVisible = hasTabindex;
-		}
-
-		return focusableIfVisible && $( element ).is( ":visible" ) && visible( $( element ) );
-	};
-
-	// Support: IE 8 only
-	// IE 8 doesn't resolve inherit to visible/hidden for computed values
-	function visible( element ) {
-		var visibility = element.css( "visibility" );
-		while ( visibility === "inherit" ) {
-			element = element.parent();
-			visibility = element.css( "visibility" );
-		}
-		return visibility !== "hidden";
-	}
-
-	$.extend( $.expr.pseudos, {
-		focusable: function( element ) {
-			return $.ui.focusable( element, $.attr( element, "tabindex" ) != null );
-		}
-	} );
-
-	return $.ui.focusable;
+	return $.ui.focusable = noder.focusable;
 
 });
 
@@ -266,12 +215,15 @@ define( 'skylark-jqueryui/ie',[ "skylark-jquery", "./version" ], function( $ ) {
 //>>description: Provide keycodes as keynames
 //>>docs: http://api.jqueryui.com/jQuery.ui.keyCode/
 
-define( 'skylark-jqueryui/keycode',[ "skylark-jquery", "./version" ], function( $ ) {
-  var keyCode = $.ui.keyCode = {},
-  	  langx = $.skylark.langx,
-  	  keys = $.skylark.eventer.keys;
+define('skylark-jqueryui/keycode',[ 
+	"skylark-langx/objects", 
+ 	"skylark-utils-dom/query", 
+ 	"skylark-utils-dom/eventer", 
+	"./version" 
+], function( objects, $, eventer ) {
+  var keyCode = $.ui.keyCode = {};
   	  
-  langx.each(keys,function(name,value) {
+  objects.each(eventer.keys,function(name,value) {
   	keyCode[name.toUpperCase()] = value;
   });
 
@@ -474,39 +426,20 @@ define( 'skylark-jqueryui/plugin',[ "skylark-jquery", "./version" ], function( $
 
 });
 
-define( 'skylark-jqueryui/safe-active-element',[ "skylark-jquery", "./version" ],  function( $ ) {
-	return $.ui.safeActiveElement = function( document ) {
-		var activeElement;
-
-		// Support: IE 9 only
-		// IE9 throws an "Unspecified error" accessing document.activeElement from an <iframe>
-		try {
-			activeElement = document.activeElement;
-		} catch ( error ) {
-			activeElement = document.body;
-		}
-
-		// Support: IE 9 - 11 only
-		// IE may return null instead of an element
-		// Interestingly, this only seems to occur when NOT in an iframe
-		if ( !activeElement ) {
-			activeElement = document.body;
-		}
-
-		// Support: IE 11 only
-		// IE11 returns a seemingly empty object in some cases when accessing
-		// document.activeElement from an <iframe>
-		if ( !activeElement.nodeName ) {
-			activeElement = document.body;
-		}
-
-		return activeElement;
-	};
-
+define('skylark-jqueryui/safe-active-element',[ 
+	"skylark-jquery", 
+	"skylark-utils-dom/noder",
+	"./version" 
+],  function($, noder) {
+	return $.ui.safeActiveElement = noder.active;
 });
 
-define( 'skylark-jqueryui/safe-blur',[ "skylark-jquery", "./version" ], function( $ ) {
-
+define('skylark-jqueryui/safe-blur',[ 
+	"skylark-utils-dom/query", 
+	"skylark-utils-dom/noder", 
+	"./version" 
+], function( $,noder ) {
+	/*
 	return $.ui.safeBlur = function( element ) {
 
 		// Support: IE9 - 10 only
@@ -515,6 +448,8 @@ define( 'skylark-jqueryui/safe-blur',[ "skylark-jquery", "./version" ], function
 			$( element ).trigger( "blur" );
 		}
 	};
+	*/
+	return $.ui.safeBlur = noder.blur;
 
 });
 
@@ -532,25 +467,12 @@ define( 'skylark-jqueryui/safe-blur',[ "skylark-jquery", "./version" ], function
 //>>description: Get the closest ancestor element that is scrollable.
 //>>docs: http://api.jqueryui.com/scrollParent/
 
-define( 'skylark-jqueryui/scroll-parent',[ "skylark-jquery", "./version" ], function( $ ) {
-
-	return $.fn.scrollParent = function( includeHidden ) {
-		var position = this.css( "position" ),
-			excludeStaticParent = position === "absolute",
-			overflowRegex = includeHidden ? /(auto|scroll|hidden)/ : /(auto|scroll)/,
-			scrollParent = this.parents().filter( function() {
-				var parent = $( this );
-				if ( excludeStaticParent && parent.css( "position" ) === "static" ) {
-					return false;
-				}
-				return overflowRegex.test( parent.css( "overflow" ) + parent.css( "overflow-y" ) +
-					parent.css( "overflow-x" ) );
-			} ).eq( 0 );
-
-		return position === "fixed" || !scrollParent.length ?
-			$( this[ 0 ].ownerDocument || document ) :
-			scrollParent;
-	};
+define('skylark-jqueryui/scroll-parent',[ 
+	"skylark-jquery", 
+	"./version" 
+], function( $ ) {
+	// use skylark-utils-dom/query
+	return $.fn.scrollParent ;
 
 });
 
@@ -568,15 +490,13 @@ define( 'skylark-jqueryui/scroll-parent',[ "skylark-jquery", "./version" ], func
 //>>description: Selects elements which can be tabbed to.
 //>>docs: http://api.jqueryui.com/tabbable-selector/
 
-define( 'skylark-jqueryui/tabbable',[ "skylark-jquery", "./version", "./focusable" ], function( $ ) {
-
-	return $.extend( $.expr.pseudos, {
-		tabbable: function( element ) {
-			var tabIndex = $.attr( element, "tabindex" ),
-				hasTabindex = tabIndex != null;
-			return ( !hasTabindex || tabIndex >= 0 ) && $.ui.focusable( element, hasTabindex );
-		}
-	} );
+define('skylark-jqueryui/tabbable',[ 
+	"skylark-jquery", 
+	"./version", 
+	"./focusable" 
+], function( $ ) {
+	//use skylark-utils-dom
+	return $.expr.pseudos;
 
 });
 

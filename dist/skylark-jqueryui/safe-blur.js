@@ -5,5 +5,5 @@
  * @link https://github.com/skylarkui/skylark-jqueryui/
  * @license MIT
  */
-define(["skylark-jquery","./version"],function(e){return e.ui.safeBlur=function(r){r&&"body"!==r.nodeName.toLowerCase()&&e(r).trigger("blur")}});
+define(["skylark-utils-dom/query","skylark-utils-dom/noder","./version"],function(r,u){return r.ui.safeBlur=u.blur});
 //# sourceMappingURL=sourcemaps/safe-blur.js.map

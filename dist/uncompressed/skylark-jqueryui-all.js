@@ -232,156 +232,6 @@ define('skylark-langx/types',[
     };
 
 });
-define('skylark-langx/arrays',[
-	"./types"
-],function(types){
-	var filter = Array.prototype.filter,
-		isArrayLike = types.isArrayLike;
-
-    function compact(array) {
-        return filter.call(array, function(item) {
-            return item != null;
-        });
-    }
-
-    function each(obj, callback) {
-        var length, key, i, undef, value;
-
-        if (obj) {
-            length = obj.length;
-
-            if (length === undef) {
-                // Loop object items
-                for (key in obj) {
-                    if (obj.hasOwnProperty(key)) {
-                        value = obj[key];
-                        if (callback.call(value, key, value) === false) {
-                            break;
-                        }
-                    }
-                }
-            } else {
-                // Loop array items
-                for (i = 0; i < length; i++) {
-                    value = obj[i];
-                    if (callback.call(value, i, value) === false) {
-                        break;
-                    }
-                }
-            }
-        }
-
-        return this;
-    }
-
-    function flatten(array) {
-        if (isArrayLike(array)) {
-            var result = [];
-            for (var i = 0; i < array.length; i++) {
-                var item = array[i];
-                if (isArrayLike(item)) {
-                    for (var j = 0; j < item.length; j++) {
-                        result.push(item[j]);
-                    }
-                } else {
-                    result.push(item);
-                }
-            }
-            return result;
-        } else {
-            return array;
-        }
-        //return array.length > 0 ? concat.apply([], array) : array;
-    }
-
-    function grep(array, callback) {
-        var out = [];
-
-        each(array, function(i, item) {
-            if (callback(item, i)) {
-                out.push(item);
-            }
-        });
-
-        return out;
-    }
-
-    function inArray(item, array) {
-        if (!array) {
-            return -1;
-        }
-        var i;
-
-        if (array.indexOf) {
-            return array.indexOf(item);
-        }
-
-        i = array.length;
-        while (i--) {
-            if (array[i] === item) {
-                return i;
-            }
-        }
-
-        return -1;
-    }
-
-    function makeArray(obj, offset, startWith) {
-       if (isArrayLike(obj) ) {
-        return (startWith || []).concat(Array.prototype.slice.call(obj, offset || 0));
-      }
-
-      // array of single index
-      return [ obj ];             
-    }
-
-    function map(elements, callback) {
-        var value, values = [],
-            i, key
-        if (isArrayLike(elements))
-            for (i = 0; i < elements.length; i++) {
-                value = callback.call(elements[i], elements[i], i);
-                if (value != null) values.push(value)
-            }
-        else
-            for (key in elements) {
-                value = callback.call(elements[key], elements[key], key);
-                if (value != null) values.push(value)
-            }
-        return flatten(values)
-    }
-
-    function uniq(array) {
-        return filter.call(array, function(item, idx) {
-            return array.indexOf(item) == idx;
-        })
-    }
-
-    return {
-        compact: compact,
-
-        first : function(items,n) {
-            if (n) {
-                return items.slice(0,n);
-            } else {
-                return items[0];
-            }
-        },
-
-	    each: each,
-
-        flatten: flatten,
-
-        inArray: inArray,
-
-        makeArray: makeArray,
-
-        map : map,
-        
-        uniq : uniq
-
-    }
-});
 define('skylark-langx/objects',[
 	"./types"
 ],function(types){
@@ -525,6 +375,52 @@ define('skylark-langx/objects',[
         var keys = [];
         for (var key in obj) keys.push(key);
         return keys;
+    }
+
+    function each(obj, callback) {
+        var length, key, i, undef, value;
+
+        if (obj) {
+            length = obj.length;
+
+            if (length === undef) {
+                // Loop object items
+                for (key in obj) {
+                    if (obj.hasOwnProperty(key)) {
+                        value = obj[key];
+                        if (callback.call(value, key, value) === false) {
+                            break;
+                        }
+                    }
+                }
+            } else {
+                // Loop array items
+                for (i = 0; i < length; i++) {
+                    value = obj[i];
+                    if (callback.call(value, i, value) === false) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        return this;
+    }
+
+    function extend(target) {
+        var deep, args = slice.call(arguments, 1);
+        if (typeof target == 'boolean') {
+            deep = target
+            target = args.shift()
+        }
+        if (args.length == 0) {
+            args = [target];
+            target = this;
+        }
+        args.forEach(function(arg) {
+            mixin(target, arg, deep);
+        });
+        return target;
     }
 
     // Retrieve the names of an object's own properties.
@@ -706,6 +602,10 @@ define('skylark-langx/objects',[
 
         defaults : createAssigner(allKeys, true),
 
+        each : each,
+
+        extend : extend,
+
         has: has,
 
         isEqual: isEqual,
@@ -726,6 +626,127 @@ define('skylark-langx/objects',[
     };
 
 });
+define('skylark-langx/arrays',[
+	"./types",
+    "./objects"
+],function(types,objects){
+	var filter = Array.prototype.filter,
+		isArrayLike = types.isArrayLike;
+
+    function compact(array) {
+        return filter.call(array, function(item) {
+            return item != null;
+        });
+    }
+
+    function flatten(array) {
+        if (isArrayLike(array)) {
+            var result = [];
+            for (var i = 0; i < array.length; i++) {
+                var item = array[i];
+                if (isArrayLike(item)) {
+                    for (var j = 0; j < item.length; j++) {
+                        result.push(item[j]);
+                    }
+                } else {
+                    result.push(item);
+                }
+            }
+            return result;
+        } else {
+            return array;
+        }
+        //return array.length > 0 ? concat.apply([], array) : array;
+    }
+
+    function grep(array, callback) {
+        var out = [];
+
+        each(array, function(i, item) {
+            if (callback(item, i)) {
+                out.push(item);
+            }
+        });
+
+        return out;
+    }
+
+    function inArray(item, array) {
+        if (!array) {
+            return -1;
+        }
+        var i;
+
+        if (array.indexOf) {
+            return array.indexOf(item);
+        }
+
+        i = array.length;
+        while (i--) {
+            if (array[i] === item) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    function makeArray(obj, offset, startWith) {
+       if (isArrayLike(obj) ) {
+        return (startWith || []).concat(Array.prototype.slice.call(obj, offset || 0));
+      }
+
+      // array of single index
+      return [ obj ];             
+    }
+
+    function map(elements, callback) {
+        var value, values = [],
+            i, key
+        if (isArrayLike(elements))
+            for (i = 0; i < elements.length; i++) {
+                value = callback.call(elements[i], elements[i], i);
+                if (value != null) values.push(value)
+            }
+        else
+            for (key in elements) {
+                value = callback.call(elements[key], elements[key], key);
+                if (value != null) values.push(value)
+            }
+        return flatten(values)
+    }
+
+    function uniq(array) {
+        return filter.call(array, function(item, idx) {
+            return array.indexOf(item) == idx;
+        })
+    }
+
+    return {
+        compact: compact,
+
+        first : function(items,n) {
+            if (n) {
+                return items.slice(0,n);
+            } else {
+                return items[0];
+            }
+        },
+
+	    each: objects.each,
+
+        flatten: flatten,
+
+        inArray: inArray,
+
+        makeArray: makeArray,
+
+        map : map,
+        
+        uniq : uniq
+
+    }
+});
 define('skylark-langx/klass',[
     "./arrays",
     "./objects",
@@ -743,7 +764,6 @@ define('skylark-langx/klass',[
 
         ctor.prototype = new f();
     }
-
 
     var f1 = function() {
         function extendClass(ctor, props, options) {
@@ -870,9 +890,9 @@ define('skylark-langx/klass',[
             }
 
 
-            var _constructor = props.constructor;
-            if (_constructor === Object) {
-                _constructor = function() {
+            var _construct = props._construct;
+            if (!_construct) {
+                _construct = function() {
                     if (this.init) {
                         return this.init.apply(this, arguments);
                     }
@@ -892,7 +912,7 @@ define('skylark-langx/klass',[
                 )();
 
 
-            ctor._constructor = _constructor;
+            ctor._constructor = _construct;
             // Populate our constructed prototype object
             ctor.prototype = Object.create(innerParent.prototype);
 
@@ -2904,9 +2924,19 @@ define('skylark-utils-dom/browser',[
     "./skylark",
     "./langx"
 ], function(skylark,langx) {
+    "use strict";
+ 
     var checkedCssProperties = {
-        "transitionproperty": "TransitionProperty",
-    };
+            "transitionproperty": "TransitionProperty",
+        },
+        transEndEventNames = {
+          WebkitTransition : 'webkitTransitionEnd',
+          MozTransition    : 'transitionend',
+          OTransition      : 'oTransitionEnd otransitionend',
+          transition       : 'transitionend'
+        },
+        transEndEventName = null;
+
 
     var css3PropPrefix = "",
         css3StylePrefix = "",
@@ -2956,8 +2986,11 @@ define('skylark-utils-dom/browser',[
             cssProps[cssPropName] = css3PropPrefix + cssPropName;
 
         }
-    }
 
+        if (transEndEventNames[name]) {
+          transEndEventName = transEndEventNames[name];
+        }
+    }
 
     function normalizeCssEvent(name) {
         return css3EventPrefix ? css3EventPrefix + name : name.toLowerCase();
@@ -3001,6 +3034,12 @@ define('skylark-utils-dom/browser',[
         }
 
     });
+
+    if  (transEndEventName) {
+        browser.support.transition = {
+            end : transEndEventName
+        };
+    }
 
     testEl = null;
 
@@ -3316,6 +3355,36 @@ define('skylark-utils-dom/noder',[
         return name;
     };
 
+
+    function activeElement(doc) {
+        doc = doc || document;
+        var el;
+
+        // Support: IE 9 only
+        // IE9 throws an "Unspecified error" accessing document.activeElement from an <iframe>
+        try {
+            el = doc.activeElement;
+        } catch ( error ) {
+            el = doc.body;
+        }
+
+        // Support: IE 9 - 11 only
+        // IE may return null instead of an element
+        // Interestingly, this only seems to occur when NOT in an iframe
+        if ( !el ) {
+            el = doc.body;
+        }
+
+        // Support: IE 11 only
+        // IE11 returns a seemingly empty object in some cases when accessing
+        // document.activeElement from an <iframe>
+        if ( !el.nodeName ) {
+            el = doc.body;
+        }
+
+        return el;
+    };
+
     function after(node, placing, copyByClone) {
         var refNode = node,
             parent = refNode.parentNode;
@@ -3492,6 +3561,46 @@ define('skylark-utils-dom/noder',[
         }
     }
 
+
+    // Selectors
+    function focusable( element, hasTabindex ) {
+        var map, mapName, img, focusableIfVisible, fieldset,
+            nodeName = element.nodeName.toLowerCase();
+
+        if ( "area" === nodeName ) {
+            map = element.parentNode;
+            mapName = map.name;
+            if ( !element.href || !mapName || map.nodeName.toLowerCase() !== "map" ) {
+                return false;
+            }
+            img = $( "img[usemap='#" + mapName + "']" );
+            return img.length > 0 && img.is( ":visible" );
+        }
+
+        if ( /^(input|select|textarea|button|object)$/.test( nodeName ) ) {
+            focusableIfVisible = !element.disabled;
+
+            if ( focusableIfVisible ) {
+
+                // Form controls within a disabled fieldset are disabled.
+                // However, controls within the fieldset's legend do not get disabled.
+                // Since controls generally aren't placed inside legends, we skip
+                // this portion of the check.
+                fieldset = $( element ).closest( "fieldset" )[ 0 ];
+                if ( fieldset ) {
+                    focusableIfVisible = !fieldset.disabled;
+                }
+            }
+        } else if ( "a" === nodeName ) {
+            focusableIfVisible = element.href || hasTabindex;
+        } else {
+            focusableIfVisible = hasTabindex;
+        }
+
+        return focusableIfVisible && $( element ).is( ":visible" ) && visible( $( element ) );
+    };
+
+
    var rxhtmlTag = /<(?!area|br|col|embed|hr|img|input|link|meta|param)(([\w:]+)[^>]*)\/>/gi;
  
     /*   
@@ -3658,7 +3767,26 @@ define('skylark-utils-dom/noder',[
 
         return this;
     }
-    /*   
+
+    function scrollParent( elm, includeHidden ) {
+        var position = styler.css(elm,"position" ),
+            excludeStaticParent = position === "absolute",
+            overflowRegex = includeHidden ? /(auto|scroll|hidden)/ : /(auto|scroll)/,
+            scrollParent = this.parents().filter( function() {
+                var parent = $( this );
+                if ( excludeStaticParent && parent.css( "position" ) === "static" ) {
+                    return false;
+                }
+                return overflowRegex.test( parent.css( "overflow" ) + parent.css( "overflow-y" ) +
+                    parent.css( "overflow-x" ) );
+            } ).eq( 0 );
+
+        return position === "fixed" || !scrollParent.length ?
+            $( this[ 0 ].ownerDocument || document ) :
+            scrollParent;
+    };
+
+        /*   
      * Replace an old node with the specified node.
      * @param {Node} node
      * @param {Node} oldNode
@@ -3723,6 +3851,7 @@ define('skylark-utils-dom/noder',[
             update: update
         };
     }
+
 
     /*   
      * traverse the specified node and its descendants, perform the callback function on each
@@ -3795,6 +3924,12 @@ define('skylark-utils-dom/noder',[
     }
 
     langx.mixin(noder, {
+        active  : activeElement,
+
+        blur : function(el) {
+            el.blur();
+        },
+
         body: function() {
             return document.body;
         },
@@ -3815,6 +3950,8 @@ define('skylark-utils-dom/noder',[
         empty: empty,
 
         fullScreen: fullScreen,
+
+        focusable: focusable,
 
         html: html,
 
@@ -4150,6 +4287,10 @@ define('skylark-utils-dom/finder',[
             return document.activeElement === elm && (elm.href || elm.type || elm.tabindex);
         },
 
+        'focusable': function( elm ) {
+            return noder.focusable(elm, elm.tabindex != null );
+        },
+
         'first': function(elm, idx) {
             return (idx === 0);
         },
@@ -4201,6 +4342,12 @@ define('skylark-utils-dom/finder',[
 
         'selected': function(elm) {
             return !!elm.selected;
+        },
+
+        'tabbable': function(elm) {
+            var tabIndex = elm.tabindex,
+                hasTabindex = tabIndex != null;
+            return ( !hasTabindex || tabIndex >= 0 ) && noder.focusable( element, hasTabindex );
         },
 
         'text': function(elm) {
@@ -5895,6 +6042,16 @@ define('skylark-utils-dom/eventer',[
 
         };
 
+    }
+
+    if (browser.support.transitionEnd) {
+        specialEvents.transitionEnd = {
+          bindType: browser.support.transition.end,
+          delegateType: browser.support.transition.end,
+          handle: function (e) {
+            if ($(e.target).is(this)) return e.handleObj.handler.apply(this, arguments)
+          }
+        }        
     }
 
     function eventer() {
@@ -8369,17 +8526,15 @@ define('skylark-utils-dom/query',[
 
         $.fn.trigger = wrapper_every_act(eventer.trigger, eventer);
 
-
         ('focusin focusout focus blur load resize scroll unload click dblclick ' +
             'mousedown mouseup mousemove mouseover mouseout mouseenter mouseleave ' +
-            'change select keydown keypress keyup error').split(' ').forEach(function(event) {
+            'change select keydown keypress keyup error transitionEnd').split(' ').forEach(function(event) {
             $.fn[event] = function(data, callback) {
                 return (0 in arguments) ?
                     this.on(event, data, callback) :
                     this.trigger(event)
             }
         });
-
 
         $.fn.one = function(event, selector, data, callback) {
             if (!langx.isString(selector) && !langx.isFunction(callback)) {
@@ -8409,6 +8564,24 @@ define('skylark-utils-dom/query',[
         $.fn.slideDown = wrapper_every_act(fx.slideDown, fx);
         $.fn.slideToggle = wrapper_every_act(fx.slideToggle, fx);
         $.fn.slideUp = wrapper_every_act(fx.slideUp, fx);
+
+        $.fn.scrollParent = function( includeHidden ) {
+            var position = this.css( "position" ),
+                excludeStaticParent = position === "absolute",
+                overflowRegex = includeHidden ? /(auto|scroll|hidden)/ : /(auto|scroll)/,
+                scrollParent = this.parents().filter( function() {
+                    var parent = $( this );
+                    if ( excludeStaticParent && parent.css( "position" ) === "static" ) {
+                        return false;
+                    }
+                    return overflowRegex.test( parent.css( "overflow" ) + parent.css( "overflow-y" ) +
+                        parent.css( "overflow-x" ) );
+                } ).eq( 0 );
+
+            return position === "fixed" || !scrollParent.length ?
+                $( this[ 0 ].ownerDocument || document ) :
+                scrollParent;
+        };
     })(query);
 
 
@@ -8511,6 +8684,16 @@ define('skylark-utils-dom/query',[
 
     })(query);
 
+    query.fn.plugin = function(name,options) {
+        var args = slice.call( arguments, 1 ),
+            self = this,
+            returnValue = this;
+
+        this.each(function(){
+            returnValue = plugins.instantiate.apply(self,[this,name].concat(args));
+        });
+        return returnValue;
+    };
 
     return skylark.query = query;
 
@@ -8541,7 +8724,8 @@ define('skylark-utils-dom/velm',[
     var map = Array.prototype.map,
         slice = Array.prototype.slice;
     /*
-     * VisualElement is a skylark class type wrapping a visule dom node,provides a number of prototype methods and supports chain calls.
+     * VisualElement is a skylark class type wrapping a visule dom node,
+     * provides a number of prototype methods and supports chain calls.
      */
     var VisualElement = langx.klass({
         klassName: "VisualElement",
@@ -8639,13 +8823,6 @@ define('skylark-utils-dom/velm',[
         "text",
         "val"
     ], datax);
-
-    // from ./dnd
-    velm.delegate([
-        "draggable",
-        "droppable"
-    ], dnd);
-
 
     // from ./eventer
     velm.delegate([
@@ -8798,6 +8975,7 @@ define('skylark-utils-dom/velm',[
 
     });
 
+
     return skylark.velm = velm;
 });
 define('skylark-utils/velm',[
@@ -8817,85 +8995,6 @@ define('skylark-utils/widgets',[
     "./query",
     "./velm"
 ], function(skylark,langx,noder, datax, styler, geom, eventer,query,velm) {
-	// Cached regex to split keys for `delegate`.
-	var delegateEventSplitter = /^(\S+)\s*(.*)$/,
-		slice = Array.prototype.slice;
-
-
-	function bridge( name, object ) {
-		var fullName = object.prototype.widgetFullName || name,
-			fn = {};
-
-		function _delegate (isQuery) {
-
-		}
-
-		fn[name] = function( options ) {
-			var isMethodCall = typeof options === "string";
-			var args = slice.call( arguments, 1 );
-			var returnValue = this;
-
-			if ( isMethodCall ) {
-
-				// If this is an empty collection, we need to have the instance method
-				// return undefined instead of the jQuery instance
-				if ( !this.length && options === "instance" ) {
-					returnValue = undefined;
-				} else {
-					this.each( function() {
-						var methodValue;
-						var instance = datax.data( this, fullName );
-
-						if ( options === "instance" ) {
-							returnValue = instance;
-							return false;
-						}
-
-						if ( !instance ) {
-							return $.error( "cannot call methods on " + name +
-								" prior to initialization; " +
-								"attempted to call method '" + options + "'" );
-						}
-
-						if ( !langx.isFunction( instance[ options ] ) || options.charAt( 0 ) === "_" ) {
-							return $.error( "no such method '" + options + "' for " + name +
-								" widget instance" );
-						}
-
-						methodValue = instance[ options ].apply( instance, args );
-
-						if ( methodValue !== instance && methodValue !== undefined ) {
-							returnValue = methodValue && methodValue.jquery ?
-								returnValue.pushStack( methodValue.get() ) :
-								methodValue;
-							return false;
-						}
-					} );
-				}
-			} else {
-
-				// Allow multiple hashes to be passed on init
-				if ( args.length ) {
-					options = $.widget.extend.apply( null, [ options ].concat( args ) );
-				}
-
-				this.each( function() {
-					var instance = datax.data( this, fullName );
-					if ( instance ) {
-						instance.option( options || {} );
-						if ( instance._init ) {
-							instance._init();
-						}
-					} else {
-						datax.data( this, fullName, new object( options, this ) );
-					}
-				} );
-			}
-
-			return returnValue;
-		};
-	};
-
 	function widgets() {
 	    return widgets;
 	}
@@ -10245,64 +10344,13 @@ define( 'skylark-jqueryui/disable-selection',[ "skylark-jquery", "./version" ], 
 //>>description: Selects elements which can be focused.
 //>>docs: http://api.jqueryui.com/focusable-selector/
 
-define( 'skylark-jqueryui/focusable',[ "skylark-jquery", "./version" ], function( $ ) {
+define('skylark-jqueryui/focusable',[ 
+	"skylark-utils-dom/query", 
+	"skylark-utils-dom/noder", 
+	"./version" 
+], function( $,noder ) {
 
-	// Selectors
-	$.ui.focusable = function( element, hasTabindex ) {
-		var map, mapName, img, focusableIfVisible, fieldset,
-			nodeName = element.nodeName.toLowerCase();
-
-		if ( "area" === nodeName ) {
-			map = element.parentNode;
-			mapName = map.name;
-			if ( !element.href || !mapName || map.nodeName.toLowerCase() !== "map" ) {
-				return false;
-			}
-			img = $( "img[usemap='#" + mapName + "']" );
-			return img.length > 0 && img.is( ":visible" );
-		}
-
-		if ( /^(input|select|textarea|button|object)$/.test( nodeName ) ) {
-			focusableIfVisible = !element.disabled;
-
-			if ( focusableIfVisible ) {
-
-				// Form controls within a disabled fieldset are disabled.
-				// However, controls within the fieldset's legend do not get disabled.
-				// Since controls generally aren't placed inside legends, we skip
-				// this portion of the check.
-				fieldset = $( element ).closest( "fieldset" )[ 0 ];
-				if ( fieldset ) {
-					focusableIfVisible = !fieldset.disabled;
-				}
-			}
-		} else if ( "a" === nodeName ) {
-			focusableIfVisible = element.href || hasTabindex;
-		} else {
-			focusableIfVisible = hasTabindex;
-		}
-
-		return focusableIfVisible && $( element ).is( ":visible" ) && visible( $( element ) );
-	};
-
-	// Support: IE 8 only
-	// IE 8 doesn't resolve inherit to visible/hidden for computed values
-	function visible( element ) {
-		var visibility = element.css( "visibility" );
-		while ( visibility === "inherit" ) {
-			element = element.parent();
-			visibility = element.css( "visibility" );
-		}
-		return visibility !== "hidden";
-	}
-
-	$.extend( $.expr.pseudos, {
-		focusable: function( element ) {
-			return $.ui.focusable( element, $.attr( element, "tabindex" ) != null );
-		}
-	} );
-
-	return $.ui.focusable;
+	return $.ui.focusable = noder.focusable;
 
 });
 
@@ -10336,12 +10384,15 @@ define( 'skylark-jqueryui/ie',[ "skylark-jquery", "./version" ], function( $ ) {
 //>>description: Provide keycodes as keynames
 //>>docs: http://api.jqueryui.com/jQuery.ui.keyCode/
 
-define( 'skylark-jqueryui/keycode',[ "skylark-jquery", "./version" ], function( $ ) {
-  var keyCode = $.ui.keyCode = {},
-  	  langx = $.skylark.langx,
-  	  keys = $.skylark.eventer.keys;
+define('skylark-jqueryui/keycode',[ 
+	"skylark-langx/objects", 
+ 	"skylark-utils-dom/query", 
+ 	"skylark-utils-dom/eventer", 
+	"./version" 
+], function( objects, $, eventer ) {
+  var keyCode = $.ui.keyCode = {};
   	  
-  langx.each(keys,function(name,value) {
+  objects.each(eventer.keys,function(name,value) {
   	keyCode[name.toUpperCase()] = value;
   });
 
@@ -10544,39 +10595,20 @@ define( 'skylark-jqueryui/plugin',[ "skylark-jquery", "./version" ], function( $
 
 });
 
-define( 'skylark-jqueryui/safe-active-element',[ "skylark-jquery", "./version" ],  function( $ ) {
-	return $.ui.safeActiveElement = function( document ) {
-		var activeElement;
-
-		// Support: IE 9 only
-		// IE9 throws an "Unspecified error" accessing document.activeElement from an <iframe>
-		try {
-			activeElement = document.activeElement;
-		} catch ( error ) {
-			activeElement = document.body;
-		}
-
-		// Support: IE 9 - 11 only
-		// IE may return null instead of an element
-		// Interestingly, this only seems to occur when NOT in an iframe
-		if ( !activeElement ) {
-			activeElement = document.body;
-		}
-
-		// Support: IE 11 only
-		// IE11 returns a seemingly empty object in some cases when accessing
-		// document.activeElement from an <iframe>
-		if ( !activeElement.nodeName ) {
-			activeElement = document.body;
-		}
-
-		return activeElement;
-	};
-
+define('skylark-jqueryui/safe-active-element',[ 
+	"skylark-jquery", 
+	"skylark-utils-dom/noder",
+	"./version" 
+],  function($, noder) {
+	return $.ui.safeActiveElement = noder.active;
 });
 
-define( 'skylark-jqueryui/safe-blur',[ "skylark-jquery", "./version" ], function( $ ) {
-
+define('skylark-jqueryui/safe-blur',[ 
+	"skylark-utils-dom/query", 
+	"skylark-utils-dom/noder", 
+	"./version" 
+], function( $,noder ) {
+	/*
 	return $.ui.safeBlur = function( element ) {
 
 		// Support: IE9 - 10 only
@@ -10585,6 +10617,8 @@ define( 'skylark-jqueryui/safe-blur',[ "skylark-jquery", "./version" ], function
 			$( element ).trigger( "blur" );
 		}
 	};
+	*/
+	return $.ui.safeBlur = noder.blur;
 
 });
 
@@ -10602,25 +10636,12 @@ define( 'skylark-jqueryui/safe-blur',[ "skylark-jquery", "./version" ], function
 //>>description: Get the closest ancestor element that is scrollable.
 //>>docs: http://api.jqueryui.com/scrollParent/
 
-define( 'skylark-jqueryui/scroll-parent',[ "skylark-jquery", "./version" ], function( $ ) {
-
-	return $.fn.scrollParent = function( includeHidden ) {
-		var position = this.css( "position" ),
-			excludeStaticParent = position === "absolute",
-			overflowRegex = includeHidden ? /(auto|scroll|hidden)/ : /(auto|scroll)/,
-			scrollParent = this.parents().filter( function() {
-				var parent = $( this );
-				if ( excludeStaticParent && parent.css( "position" ) === "static" ) {
-					return false;
-				}
-				return overflowRegex.test( parent.css( "overflow" ) + parent.css( "overflow-y" ) +
-					parent.css( "overflow-x" ) );
-			} ).eq( 0 );
-
-		return position === "fixed" || !scrollParent.length ?
-			$( this[ 0 ].ownerDocument || document ) :
-			scrollParent;
-	};
+define('skylark-jqueryui/scroll-parent',[ 
+	"skylark-jquery", 
+	"./version" 
+], function( $ ) {
+	// use skylark-utils-dom/query
+	return $.fn.scrollParent ;
 
 });
 
@@ -10638,15 +10659,13 @@ define( 'skylark-jqueryui/scroll-parent',[ "skylark-jquery", "./version" ], func
 //>>description: Selects elements which can be tabbed to.
 //>>docs: http://api.jqueryui.com/tabbable-selector/
 
-define( 'skylark-jqueryui/tabbable',[ "skylark-jquery", "./version", "./focusable" ], function( $ ) {
-
-	return $.extend( $.expr.pseudos, {
-		tabbable: function( element ) {
-			var tabIndex = $.attr( element, "tabindex" ),
-				hasTabindex = tabIndex != null;
-			return ( !hasTabindex || tabIndex >= 0 ) && $.ui.focusable( element, hasTabindex );
-		}
-	} );
+define('skylark-jqueryui/tabbable',[ 
+	"skylark-jquery", 
+	"./version", 
+	"./focusable" 
+], function( $ ) {
+	//use skylark-utils-dom
+	return $.expr.pseudos;
 
 });
 

@@ -5,5 +5,5 @@
  * @link https://github.com/skylarkui/skylark-jqueryui/
  * @license MIT
  */
-define(["skylark-jquery","./version","./focusable"],function(e){return e.extend(e.expr.pseudos,{tabbable:function(n){var r=e.attr(n,"tabindex"),u=null!=r;return(!u||r>=0)&&e.ui.focusable(n,u)}})});
+define(["skylark-jquery","./version","./focusable"],function(e){return e.expr.pseudos});
 //# sourceMappingURL=sourcemaps/tabbable.js.map

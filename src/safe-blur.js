@@ -1,5 +1,9 @@
-define( [ "skylark-jquery", "./version" ], function( $ ) {
-
+define([ 
+	"skylark-utils-dom/query", 
+	"skylark-utils-dom/noder", 
+	"./version" 
+], function( $,noder ) {
+	/*
 	return $.ui.safeBlur = function( element ) {
 
 		// Support: IE9 - 10 only
@@ -8,5 +12,7 @@ define( [ "skylark-jquery", "./version" ], function( $ ) {
 			$( element ).trigger( "blur" );
 		}
 	};
+	*/
+	return $.ui.safeBlur = noder.blur;
 
 });

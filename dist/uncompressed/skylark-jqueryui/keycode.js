@@ -12,12 +12,15 @@
 //>>description: Provide keycodes as keynames
 //>>docs: http://api.jqueryui.com/jQuery.ui.keyCode/
 
-define( [ "skylark-jquery", "./version" ], function( $ ) {
-  var keyCode = $.ui.keyCode = {},
-  	  langx = $.skylark.langx,
-  	  keys = $.skylark.eventer.keys;
+define([ 
+	"skylark-langx/objects", 
+ 	"skylark-utils-dom/query", 
+ 	"skylark-utils-dom/eventer", 
+	"./version" 
+], function( objects, $, eventer ) {
+  var keyCode = $.ui.keyCode = {};
   	  
-  langx.each(keys,function(name,value) {
+  objects.each(eventer.keys,function(name,value) {
   	keyCode[name.toUpperCase()] = value;
   });
 

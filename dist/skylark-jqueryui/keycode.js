@@ -5,5 +5,5 @@
  * @link https://github.com/skylarkui/skylark-jqueryui/
  * @license MIT
  */
-define(["skylark-jquery","./version"],function(e){var r=e.ui.keyCode={},n=e.skylark.langx,k=e.skylark.eventer.keys;return n.each(k,function(e,n){r[e.toUpperCase()]=n}),r});
+define(["skylark-langx/objects","skylark-utils-dom/query","skylark-utils-dom/eventer","./version"],function(e,r,n){var s=r.ui.keyCode={};return e.each(n.keys,function(e,r){s[e.toUpperCase()]=r}),s});
 //# sourceMappingURL=sourcemaps/keycode.js.map
