@@ -15,6 +15,7 @@
 // This file is deprecated
 define( [ "skylark-jquery", "./version" ], function( $ ) {
 
+	
 	return $.fn.extend( {
 		disableSelection: ( function() {
 			var eventType = "onselectstart" in document.createElement( "div" ) ?
@@ -32,5 +33,6 @@ define( [ "skylark-jquery", "./version" ], function( $ ) {
 			return this.off( ".ui-disableSelection" );
 		}
 	});
-
+	
+	// use skylark-utils-dom/query
 });

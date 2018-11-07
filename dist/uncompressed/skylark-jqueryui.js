@@ -106,6 +106,7 @@ define('skylark-jqueryui/data',[
 	"skylark-jquery", 
 	"./version"
 ], function( $ ) {
+	/*
 	return $.extend( $.expr.pseudos, {
 	//	data: $.expr.createPseudo ?
 	//		$.expr.createPseudo( function( dataName ) {
@@ -122,6 +123,9 @@ define('skylark-jqueryui/data',[
 			return !!$.data( elem, dataName || match[3]);
 		}
 	});
+	*/
+	// use skylark-utils-dom
+	return $.expr.pseudos;	
 });
 
 /*!
@@ -141,6 +145,7 @@ define('skylark-jqueryui/data',[
 // This file is deprecated
 define( 'skylark-jqueryui/disable-selection',[ "skylark-jquery", "./version" ], function( $ ) {
 
+	
 	return $.fn.extend( {
 		disableSelection: ( function() {
 			var eventType = "onselectstart" in document.createElement( "div" ) ?
@@ -158,7 +163,8 @@ define( 'skylark-jqueryui/disable-selection',[ "skylark-jquery", "./version" ], 
 			return this.off( ".ui-disableSelection" );
 		}
 	});
-
+	
+	// use skylark-utils-dom/query
 });
 
 /*!

@@ -16,6 +16,7 @@ define([
 	"skylark-jquery", 
 	"./version"
 ], function( $ ) {
+	/*
 	return $.extend( $.expr.pseudos, {
 	//	data: $.expr.createPseudo ?
 	//		$.expr.createPseudo( function( dataName ) {
@@ -32,4 +33,7 @@ define([
 			return !!$.data( elem, dataName || match[3]);
 		}
 	});
+	*/
+	// use skylark-utils-dom
+	return $.expr.pseudos;	
 });

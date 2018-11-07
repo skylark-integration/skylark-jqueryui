@@ -866,6 +866,14 @@ define('skylark-langx/klass',[
             return newCtor;
         }
 
+        function _constructor ()  {
+            if (this._construct) {
+                return this._construct.apply(this, arguments);
+            } else  if (this.init) {
+                return this.init.apply(this, arguments);
+            }
+        }
+
         return function createClass(props, parent, mixins,options) {
             if (isArray(parent)) {
                 options = mixins;
@@ -889,16 +897,6 @@ define('skylark-langx/klass',[
                 innerParent = mergeMixins(innerParent,mixins);
             }
 
-
-            var _construct = props._construct;
-            if (!_construct) {
-                _construct = function() {
-                    if (this.init) {
-                        return this.init.apply(this, arguments);
-                    }
-                };
-            };
-
             var klassName = props.klassName || "",
                 ctor = new Function(
                     "return function " + klassName + "() {" +
@@ -912,7 +910,6 @@ define('skylark-langx/klass',[
                 )();
 
 
-            ctor._constructor = _construct;
             // Populate our constructed prototype object
             ctor.prototype = Object.create(innerParent.prototype);
 
@@ -922,6 +919,11 @@ define('skylark-langx/klass',[
 
             // And make this class extendable
             ctor.__proto__ = innerParent;
+
+
+            if (!ctor._constructor) {
+                ctor._constructor = _constructor;
+            } 
 
             if (mixins) {
                 ctor.__mixins__ = mixins;
@@ -2985,10 +2987,15 @@ define('skylark-utils-dom/browser',[
             var cssPropName = langx.dasherize(matched[2]);
             cssProps[cssPropName] = css3PropPrefix + cssPropName;
 
+            if (transEndEventNames[name]) {
+              transEndEventName = transEndEventNames[name];
+            }
         }
+    }
 
-        if (transEndEventNames[name]) {
-          transEndEventName = transEndEventNames[name];
+    if (!transEndEventName) {
+        if (testStyle["transition"] !== undefined) {
+            transEndEventName = transEndEventNames["transition"];
         }
     }
 
@@ -5366,6 +5373,12 @@ define('skylark-utils-dom/datax',[
         }
     }
 
+
+    finder.pseudos.data = function( elem, i, match,dataName ) {
+        return !!data( elem, dataName || match[3]);
+    };
+   
+
     function datax() {
         return datax;
     }
@@ -6046,11 +6059,11 @@ define('skylark-utils-dom/eventer',[
 
     if (browser.support.transitionEnd) {
         specialEvents.transitionEnd = {
+//          handle: function (e) {
+//            if ($(e.target).is(this)) return e.handleObj.handler.apply(this, arguments)
+//          },
           bindType: browser.support.transition.end,
-          delegateType: browser.support.transition.end,
-          handle: function (e) {
-            if ($(e.target).is(this)) return e.handleObj.handler.apply(this, arguments)
-          }
+          delegateType: browser.support.transition.end
         }        
     }
 
@@ -6139,7 +6152,14 @@ define('skylark-utils-dom/geom',[
      * @param {HTMLElement} elm
      */
     function borderExtents(elm) {
-        var s = getComputedStyle(elm);
+        if (noder.isWindow(elm)) {
+            return {
+                left : 0,
+                top : 0,
+                right : 0,
+                bottom : 0
+            }
+        }        var s = getComputedStyle(elm);
         return {
             left: px(s.borderLeftWidth, elm),
             top: px(s.borderTopWidth, elm),
@@ -6331,6 +6351,14 @@ define('skylark-utils-dom/geom',[
      * @param {HTMLElement} elm
      */
     function marginExtents(elm) {
+        if (noder.isWindow(elm)) {
+            return {
+                left : 0,
+                top : 0,
+                right : 0,
+                bottom : 0
+            }
+        }
         var s = getComputedStyle(elm);
         return {
             left: px(s.marginLeft),
@@ -6369,6 +6397,14 @@ define('skylark-utils-dom/geom',[
      * @param {HTMLElement} elm
      */
     function paddingExtents(elm) {
+        if (noder.isWindow(elm)) {
+            return {
+                left : 0,
+                top : 0,
+                right : 0,
+                bottom : 0
+            }
+        }
         var s = getComputedStyle(elm);
         return {
             left: px(s.paddingLeft),
@@ -6735,8 +6771,8 @@ define('skylark-utils-dom/geom',[
                 };
             }
             return {
-                size: marginSize(raw),
-                offset: offset(raw)
+                size: size(raw),
+                offset: pagePosition(raw)
             };
         }
 
@@ -6765,7 +6801,7 @@ define('skylark-utils-dom/geom',[
                 element: withinElement,
                 isWindow: isWindow,
                 isDocument: isDocument,
-                offset: hasOffset ? offset(element) : { left: 0, top: 0 },
+                offset: hasOffset ? pagePosition(element) : { left: 0, top: 0 },
                 scrollLeft: scrollLeft(withinElement),
                 scrollTop: scrollTop(withinElement),
                 width: msize.width,
@@ -6944,8 +6980,8 @@ define('skylark-utils-dom/geom',[
                     };
                 }
 
-                offset(elem, langx.extend( position, { using: using } ));
-            } );
+                pagePosition(elem, langx.extend( position, { using: using } ));
+            })(elm);
         }
 
         var positions = {
@@ -7972,10 +8008,10 @@ define('skylark-utils-dom/query',[
         return function() {
             var self = this,
                 params = slice.call(arguments);
-            var result = $.map(self, function(elem, idx) {
+            var result = langx.map(self, function(elem, idx) {
                 return func.apply(context, [elem].concat(params));
             });
-            return $(uniq(result));
+            return query(uniq(result));
         }
     }
 
@@ -8496,6 +8532,10 @@ define('skylark-utils-dom/query',[
                 if (!this.length) return
 
                 if (options) {
+                    if (options.of && options.of.length) {
+                        options = langx.clone(options);
+                        options.of = options.of[0];
+                    }
                     return this.each( function() {
                         geom.posit(this,options);
                     });
@@ -8578,7 +8618,6 @@ define('skylark-utils-dom/query',[
         $.fn.innerWidth = wrapper_value(geom.clientWidth, geom, geom.clientWidth);
 
         $.fn.innerHeight = wrapper_value(geom.clientHeight, geom, geom.clientHeight);
-
 
         var traverseNode = noder.traverse;
 
@@ -8827,6 +8866,29 @@ define('skylark-utils-dom/query',[
             this.addClass(newClass);
             return this;
         };
+
+        $.fn.replaceClass = function(newClass, oldClass) {
+            this.removeClass(oldClass);
+            this.addClass(newClass);
+            return this;
+        };
+
+        $.fn.disableSelection = ( function() {
+            var eventType = "onselectstart" in document.createElement( "div" ) ?
+                "selectstart" :
+                "mousedown";
+
+            return function() {
+                return this.on( eventType + ".ui-disableSelection", function( event ) {
+                    event.preventDefault();
+                } );
+            };
+        } )();
+
+        $.fn.enableSelection = function() {
+            return this.off( ".ui-disableSelection" );
+        };
+       
 
     })(query);
 
@@ -9360,21 +9422,7 @@ define('skylark-jquery/core',[
 	
 	    $.each = langx.each;
 
-	    $.extend = function(target) {
-	        var deep, args = slice.call(arguments, 1);
-	        if (typeof target == 'boolean') {
-	            deep = target
-	            target = args.shift()
-	        }
-	        if (args.length == 0) {
-	            args = [target];
-	            target = this;
-	        }
-	        args.forEach(function(arg) {
-	        	langx.mixin(target, arg, deep);
-	        });
-	        return target;
-	    };
+	    $.extend = langx.extend;
 
 	    $.grep = function(elements, callback) {
 	        return filter.call(elements, callback)
@@ -10421,6 +10469,7 @@ define('skylark-jqueryui/data',[
 	"skylark-jquery", 
 	"./version"
 ], function( $ ) {
+	/*
 	return $.extend( $.expr.pseudos, {
 	//	data: $.expr.createPseudo ?
 	//		$.expr.createPseudo( function( dataName ) {
@@ -10437,6 +10486,9 @@ define('skylark-jqueryui/data',[
 			return !!$.data( elem, dataName || match[3]);
 		}
 	});
+	*/
+	// use skylark-utils-dom
+	return $.expr.pseudos;	
 });
 
 /*!
@@ -10456,6 +10508,7 @@ define('skylark-jqueryui/data',[
 // This file is deprecated
 define( 'skylark-jqueryui/disable-selection',[ "skylark-jquery", "./version" ], function( $ ) {
 
+	
 	return $.fn.extend( {
 		disableSelection: ( function() {
 			var eventType = "onselectstart" in document.createElement( "div" ) ?
@@ -10473,7 +10526,8 @@ define( 'skylark-jqueryui/disable-selection',[ "skylark-jquery", "./version" ], 
 			return this.off( ".ui-disableSelection" );
 		}
 	});
-
+	
+	// use skylark-utils-dom/query
 });
 
 /*!
