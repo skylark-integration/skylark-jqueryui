@@ -185,7 +185,9 @@ define( [
 			// so the old child constructors can be garbage collected
 			delete existingConstructor._childConstructors;
 		} else {
-			base._childConstructors.push( constructor );
+			if (base._childConstructors) {
+				base._childConstructors.push( constructor );
+			}
 		}
 
 		//$.widget.bridge( name, constructor );
