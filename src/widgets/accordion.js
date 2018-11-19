@@ -19,11 +19,11 @@
 //>>css.theme: ../../themes/base/theme.css
 
 define( [
-			"skylark-jquery",
-			"../version",
-			"../keycode",
-			"../unique-id",
-			"../widget"
+	"skylark-jquery",
+	"../version",
+	"../keycode",
+	"../unique-id",
+	"../widget"
 ],function( $ ) {
 
 return $.widget( "ui.accordion", {

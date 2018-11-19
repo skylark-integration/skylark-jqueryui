@@ -19,9 +19,9 @@
 //>>css.theme: ../../themes/base/theme.css
 
 define( [
-			"skylark-jquery",
-			"../version",
-			"../keycode"
+	"skylark-jquery",
+	"../version",
+	"../keycode"
 ],function( $ ) {
 
 $.extend( $.ui, { datepicker: { version: "@VERSION" } } );

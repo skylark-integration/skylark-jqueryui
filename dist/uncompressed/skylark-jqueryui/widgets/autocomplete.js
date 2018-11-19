@@ -17,13 +17,13 @@
 //>>css.theme: ../../themes/base/theme.css
 
 define( [
-			"skylark-jquery",
-			"./menu",
-			"../keycode",
-			"../position",
-			"../safe-active-element",
-			"../version",
-			"../widget"
+	"skylark-jquery",
+	"./menu",
+	"../keycode",
+	"../position",
+	"../safe-active-element",
+	"../version",
+	"../widget"
 ],function( $ ) {
 
 $.widget( "ui.autocomplete", {

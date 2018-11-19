@@ -87,6 +87,7 @@ require.config( {
       { name: "skylark-utils", location: "../node_modules/skylark-utils/dist/uncompressed/skylark-utils" },
       { name: "skylark-utils-dom", location: "../node_modules/skylark-utils-dom/dist/uncompressed/skylark-utils-dom" },
       { name: "skylark-jquery", location: "../node_modules/skylark-jquery/dist/uncompressed/skylark-jquery" },
+      { name: "skylark-jqueryui-interact", location: "../node_modules/skylark-jqueryui-interact/dist/uncompressed/skylark-jqueryui-interact" },
       { name: "skylark-jqueryui", location: "../src" }
 
 	],

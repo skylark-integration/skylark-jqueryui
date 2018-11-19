@@ -17,20 +17,20 @@
 //>>css.theme: ../../themes/base/theme.css
 
 define( [
-			"skylark-jquery",
-			"./button",
-			"./draggable",
-			"./mouse",
-			"./resizable",
-			"../focusable",
-			"../keycode",
-			"../position",
-			"../safe-active-element",
-			"../safe-blur",
-			"../tabbable",
-			"../unique-id",
-			"../version",
-			"../widget"
+	"skylark-jquery",
+	"./button",
+	"./draggable",
+	"./mouse",
+	"./resizable",
+	"../focusable",
+	"../keycode",
+	"../position",
+	"../safe-active-element",
+	"../safe-blur",
+	"../tabbable",
+	"../unique-id",
+	"../version",
+	"../widget"
 ],function( $ ) {
 
 $.widget( "ui.dialog", {

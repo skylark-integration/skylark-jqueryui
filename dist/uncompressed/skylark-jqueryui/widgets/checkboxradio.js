@@ -18,11 +18,11 @@
 //>>css.theme: ../../themes/base/theme.css
 
 define( [
-			"skylark-jquery",
-			"../escape-selector",
-			"../form-reset-mixin",
-			"../labels",
-			"../widget"
+	"skylark-jquery",
+	"../escape-selector",
+	"../form-reset-mixin",
+	"../labels",
+	"../widget"
 ],function( $ ) {
 
 $.widget( "ui.checkboxradio", [ $.ui.formResetMixin, {

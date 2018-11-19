@@ -17,15 +17,15 @@
 //>>css.theme: ../../themes/base/theme.css
 
 define( [
-			"skylark-jquery",
+	"skylark-jquery",
 
-			// These are only for backcompat
-			// TODO: Remove after 1.12
-			"./controlgroup",
-			"./checkboxradio",
+	// These are only for backcompat
+	// TODO: Remove after 1.12
+	"./controlgroup",
+	"./checkboxradio",
 
-			"../keycode",
-			"../widget"
+	"../keycode",
+	"../widget"
 ],function( $ ) {
 
 $.widget( "ui.button", {

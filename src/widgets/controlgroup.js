@@ -17,8 +17,8 @@
 //>>css.theme: ../../themes/base/theme.css
 
 define( [
-			"skylark-jquery",
-			"../widget"
+	"skylark-jquery",
+	"../widget"
 ],function( $ ) {
 var controlgroupCornerRegex = /ui-corner-([a-z]){2,6}/g;
 

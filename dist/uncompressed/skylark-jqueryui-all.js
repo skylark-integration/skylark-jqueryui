@@ -56,7 +56,7 @@
                 args.push(require(dep));
             })
 
-            module.exports = module.factory.apply(window, args);
+            module.exports = module.factory.apply(globals, args);
         }
         return module.exports;
     };
@@ -72,7 +72,7 @@
     var skylarkjs = require("skylark-langx/skylark");
 
     if (isCmd) {
-      exports = skylarkjs;
+      module.exports = skylarkjs;
     } else {
       globals.skylarkjs  = skylarkjs;
     }
@@ -84,14 +84,6 @@ define('skylark-langx/skylark',[], function() {
     var skylark = {
 
     };
-    return skylark;
-});
-
-define('skylark-utils/skylark',["skylark-langx/skylark"], function(skylark) {
-    return skylark;
-});
-
-define('skylark-utils-dom/skylark',["skylark-langx/skylark"], function(skylark) {
     return skylark;
 });
 
@@ -2916,6 +2908,14 @@ define('skylark-langx/langx',[
 
     return skylark.langx = langx;
 });
+define('skylark-utils-dom/skylark',["skylark-langx/skylark"], function(skylark) {
+    return skylark;
+});
+
+define('skylark-utils-dom/dom',["./skylark"], function(skylark) {
+	return skylark.dom = {};
+});
+
 define('skylark-utils-dom/langx',[
     "skylark-langx/langx"
 ], function(langx) {
@@ -2923,9 +2923,9 @@ define('skylark-utils-dom/langx',[
 });
 
 define('skylark-utils-dom/browser',[
-    "./skylark",
+    "./dom",
     "./langx"
-], function(skylark,langx) {
+], function(dom,langx) {
     "use strict";
  
     var checkedCssProperties = {
@@ -3050,25 +3050,13 @@ define('skylark-utils-dom/browser',[
 
     testEl = null;
 
-    return skylark.browser = browser;
-});
-
-define('skylark-utils/browser',[
-    "skylark-utils-dom/browser"
-], function(browser) {
-    return browser;
-});
-
-define('skylark-utils/langx',[
-    "skylark-langx/langx"
-], function(langx) {
-    return langx;
+    return dom.browser = browser;
 });
 
 define('skylark-utils-dom/styler',[
-    "./skylark",
+    "./dom",
     "./langx"
-], function(skylark, langx) {
+], function(dom, langx) {
     var every = Array.prototype.every,
         forEach = Array.prototype.forEach,
         camelCase = langx.camelCase,
@@ -3314,14 +3302,14 @@ define('skylark-utils-dom/styler',[
         toggleClass: toggleClass
     });
 
-    return skylark.styler = styler;
+    return dom.styler = styler;
 });
 define('skylark-utils-dom/noder',[
-    "./skylark",
+    "./dom",
     "./langx",
     "./browser",
     "./styler"
-], function(skylark, langx, browser, styler) {
+], function(dom, langx, browser, styler) {
     var isIE = !!navigator.userAgent.match(/Trident/g) || !!navigator.userAgent.match(/MSIE/g),
         fragmentRE = /^\s*<(\w+|!)[^>]*>/,
         singleTagRE = /^<(\w+)\s*\/?>(?:<\/\1>|)$/,
@@ -4001,20 +3989,14 @@ define('skylark-utils-dom/noder',[
         unwrap: unwrap
     });
 
-    return skylark.noder = noder;
+    return dom.noder = noder;
 });
-define('skylark-utils/noder',[
-    "skylark-utils-dom/noder"
-], function(noder) {
-    return noder;
-});
-
 define('skylark-utils-dom/finder',[
-    "./skylark",
+    "./dom",
     "./langx",
     "./browser",
     "./noder"
-], function(skylark, langx, browser, noder, velm) {
+], function(dom, langx, browser, noder, velm) {
     var local = {},
         filter = Array.prototype.filter,
         slice = Array.prototype.slice,
@@ -5115,13 +5097,13 @@ define('skylark-utils-dom/finder',[
         siblings: siblings
     });
 
-    return skylark.finder = finder;
+    return dom.finder = finder;
 });
 define('skylark-utils-dom/datax',[
-    "./skylark",
+    "./dom",
     "./langx",
     "./finder"
-], function(skylark, langx, finder) {
+], function(dom, langx, finder) {
     var map = Array.prototype.map,
         filter = Array.prototype.filter,
         camelCase = langx.camelCase,
@@ -5407,22 +5389,16 @@ define('skylark-utils-dom/datax',[
         val: val
     });
 
-    return skylark.datax = datax;
+    return dom.datax = datax;
 });
-define('skylark-utils/datax',[
-    "skylark-utils-dom/datax"
-], function(datax) {
-    return datax;
-});
-
 define('skylark-utils-dom/eventer',[
-    "./skylark",
+    "./dom",
     "./langx",
     "./browser",
     "./finder",
     "./noder",
     "./datax"
-], function(skylark, langx, browser, finder, noder, datax) {
+], function(dom, langx, browser, finder, noder, datax) {
     var mixin = langx.mixin,
         each = langx.each,
         slice = Array.prototype.slice,
@@ -6096,26 +6072,14 @@ define('skylark-utils-dom/eventer',[
 
     });
 
-    return skylark.eventer = eventer;
+    return dom.eventer = eventer;
 });
-define('skylark-utils/eventer',[
-    "skylark-utils-dom/eventer"
-], function(eventer) {
-    return eventer;
-});
-
-define('skylark-utils/finder',[
-    "skylark-utils-dom/finder"
-], function(finder) {
-    return finder;
-});
-
 define('skylark-utils-dom/geom',[
-    "./skylark",
+    "./dom",
     "./langx",
     "./noder",
     "./styler"
-], function(skylark, langx, noder, styler) {
+], function(dom, langx, noder, styler) {
     var rootNodeRE = /^(?:body|html)$/i,
         px = langx.toPixel,
         offsetParent = noder.offsetParent,
@@ -7164,16 +7128,16 @@ define('skylark-utils-dom/geom',[
         geom.posit = posit;
     })();
 
-    return skylark.geom = geom;
+    return dom.geom = geom;
 });
 define('skylark-utils-dom/fx',[
-    "./skylark",
+    "./dom",
     "./langx",
     "./browser",
     "./geom",
     "./styler",
     "./eventer"
-], function(skylark, langx, browser, geom, styler, eventer) {
+], function(dom, langx, browser, geom, styler, eventer) {
     var animationName,
         animationDuration,
         animationTiming,
@@ -7694,267 +7658,10 @@ define('skylark-utils-dom/fx',[
         toggle: toggle
     });
 
-    return skylark.fx = fx;
-});
-define('skylark-utils/fx',[
-    "skylark-utils-dom/fx"
-], function(fx) {
-    return fx;
-});
-
-define('skylark-utils/styler',[
-    "./skylark",
-    "./langx"
-], function(skylark, langx) {
-    var every = Array.prototype.every,
-        forEach = Array.prototype.forEach,
-        camelCase = langx.camelCase,
-        dasherize = langx.dasherize;
-
-    function maybeAddPx(name, value) {
-        return (typeof value == "number" && !cssNumber[dasherize(name)]) ? value + "px" : value
-    }
-
-    var cssNumber = {
-            'column-count': 1,
-            'columns': 1,
-            'font-weight': 1,
-            'line-height': 1,
-            'opacity': 1,
-            'z-index': 1,
-            'zoom': 1
-        },
-        classReCache = {
-
-        };
-
-    function classRE(name) {
-        return name in classReCache ?
-            classReCache[name] : (classReCache[name] = new RegExp('(^|\\s)' + name + '(\\s|$)'));
-    }
-
-    // access className property while respecting SVGAnimatedString
-    /*
-     * Adds the specified class(es) to each element in the set of matched elements.
-     * @param {HTMLElement} node
-     * @param {String} value
-     */
-    function className(node, value) {
-        var klass = node.className || '',
-            svg = klass && klass.baseVal !== undefined
-
-        if (value === undefined) return svg ? klass.baseVal : klass
-        svg ? (klass.baseVal = value) : (node.className = value)
-    }
-
-    function disabled(elm, value ) {
-        if (arguments.length < 2) {
-            return !!this.dom.disabled;
-        }
-
-        elm.disabled = value;
-
-        return this;
-    }
-
-    var elementDisplay = {};
-
-    function defaultDisplay(nodeName) {
-        var element, display
-        if (!elementDisplay[nodeName]) {
-            element = document.createElement(nodeName)
-            document.body.appendChild(element)
-            display = getComputedStyle(element, '').getPropertyValue("display")
-            element.parentNode.removeChild(element)
-            display == "none" && (display = "block")
-            elementDisplay[nodeName] = display
-        }
-        return elementDisplay[nodeName]
-    }
-    /*
-     * Display the matched elements.
-     * @param {HTMLElement} elm
-     */
-    function show(elm) {
-        styler.css(elm, "display", "");
-        if (styler.css(elm, "display") == "none") {
-            styler.css(elm, "display", defaultDisplay(elm.nodeName));
-        }
-        return this;
-    }
-
-    function isInvisible(elm) {
-        return styler.css(elm, "display") == "none" || styler.css(elm, "opacity") == 0;
-    }
-
-    /*
-     * Hide the matched elements.
-     * @param {HTMLElement} elm
-     */
-    function hide(elm) {
-        styler.css(elm, "display", "none");
-        return this;
-    }
-
-    /*
-     * Adds the specified class(es) to each element in the set of matched elements.
-     * @param {HTMLElement} elm
-     * @param {String} name
-     */
-    function addClass(elm, name) {
-        if (!name) return this
-        var cls = className(elm),
-            names;
-        if (langx.isString(name)) {
-            names = name.split(/\s+/g);
-        } else {
-            names = name;
-        }
-        names.forEach(function(klass) {
-            var re = classRE(klass);
-            if (!cls.match(re)) {
-                cls += (cls ? " " : "") + klass;
-            }
-        });
-
-        className(elm, cls);
-
-        return this;
-    }
-    /*
-     * Get the value of a computed style property for the first element in the set of matched elements or set one or more CSS properties for every matched element.
-     * @param {HTMLElement} elm
-     * @param {String} property
-     * @param {Any} value
-     */
-    function css(elm, property, value) {
-        if (arguments.length < 3) {
-            var computedStyle,
-                computedStyle = getComputedStyle(elm, '')
-            if (langx.isString(property)) {
-                return elm.style[camelCase(property)] || computedStyle.getPropertyValue(dasherize(property))
-            } else if (langx.isArrayLike(property)) {
-                var props = {}
-                forEach.call(property, function(prop) {
-                    props[prop] = (elm.style[camelCase(prop)] || computedStyle.getPropertyValue(dasherize(prop)))
-                })
-                return props
-            }
-        }
-
-        var css = '';
-        if (typeof(property) == 'string') {
-            if (!value && value !== 0) {
-                elm.style.removeProperty(dasherize(property));
-            } else {
-                css = dasherize(property) + ":" + maybeAddPx(property, value)
-            }
-        } else {
-            for (key in property) {
-                if (property[key] === undefined) {
-                    continue;
-                }
-                if (!property[key] && property[key] !== 0) {
-                    elm.style.removeProperty(dasherize(key));
-                } else {
-                    css += dasherize(key) + ':' + maybeAddPx(key, property[key]) + ';'
-                }
-            }
-        }
-
-        elm.style.cssText += ';' + css;
-        return this;
-    }
-
-    /*
-     * Determine whether any of the matched elements are assigned the given class.
-     * @param {HTMLElement} elm
-     * @param {String} name
-     */
-    function hasClass(elm, name) {
-        var re = classRE(name);
-        return elm.className && elm.className.match(re);
-    }
-
-    /*
-     * Remove a single class, multiple classes, or all classes from each element in the set of matched elements.
-     * @param {HTMLElement} elm
-     * @param {String} name
-     */
-    function removeClass(elm, name) {
-        if (name) {
-            var cls = className(elm),
-                names;
-
-            if (langx.isString(name)) {
-                names = name.split(/\s+/g);
-            } else {
-                names = name;
-            }
-
-            names.forEach(function(klass) {
-                var re = classRE(klass);
-                if (cls.match(re)) {
-                    cls = cls.replace(re, " ");
-                }
-            });
-
-            className(elm, cls.trim());
-        } else {
-            className(elm, "");
-        }
-
-        return this;
-    }
-
-    /*
-     * Add or remove one or more classes from the specified element.
-     * @param {HTMLElement} elm
-     * @param {String} name
-     * @param {} when
-     */
-    function toggleClass(elm, name, when) {
-        var self = this;
-        name.split(/\s+/g).forEach(function(klass) {
-            if (when === undefined) {
-                when = !self.hasClass(elm, klass);
-            }
-            if (when) {
-                self.addClass(elm, klass);
-            } else {
-                self.removeClass(elm, klass)
-            }
-        });
-
-        return self;
-    }
-
-    var styler = function() {
-        return styler;
-    };
-
-    langx.mixin(styler, {
-        autocssfix: false,
-        cssHooks: {
-
-        },
-
-        addClass: addClass,
-        className: className,
-        css: css,
-        disabled : disabled,        
-        hasClass: hasClass,
-        hide: hide,
-        isInvisible: isInvisible,
-        removeClass: removeClass,
-        show: show,
-        toggleClass: toggleClass
-    });
-
-    return skylark.styler = styler;
+    return dom.fx = fx;
 });
 define('skylark-utils-dom/query',[
-    "./skylark",
+    "./dom",
     "./langx",
     "./noder",
     "./datax",
@@ -7963,7 +7670,7 @@ define('skylark-utils-dom/query',[
     "./geom",
     "./styler",
     "./fx"
-], function(skylark, langx, noder, datax, eventer, finder, geom, styler, fx) {
+], function(dom, langx, noder, datax, eventer, finder, geom, styler, fx) {
     var some = Array.prototype.some,
         push = Array.prototype.push,
         every = Array.prototype.every,
@@ -8903,502 +8610,21 @@ define('skylark-utils-dom/query',[
         return returnValue;
     };
 
-    return skylark.query = query;
+    return dom.query = query;
 
 });
-define('skylark-utils/query',[
-    "skylark-utils-dom/query"
-], function(query) {
-    return query;
-});
-
-define('skylark-utils/geom',[
-    "skylark-utils-dom/geom"
-], function(geom) {
-    return geom;
-});
-
-define('skylark-utils-dom/velm',[
-    "./skylark",
-    "./langx",
-    "./datax",
-    "./eventer",
-    "./finder",
-    "./fx",
-    "./geom",
-    "./noder",
-    "./styler"
-], function(skylark, langx, datax, eventer, finder, fx, geom, noder, styler) {
-    var map = Array.prototype.map,
-        slice = Array.prototype.slice;
-    /*
-     * VisualElement is a skylark class type wrapping a visule dom node,
-     * provides a number of prototype methods and supports chain calls.
-     */
-    var VisualElement = langx.klass({
-        klassName: "VisualElement",
-
-        "init": function(node) {
-            if (langx.isString(node)) {
-                node = document.getElementById(node);
-            }
-            this.domNode = node;
-        }
-    });
-    /*
-     * the VisualElement object wrapping document.body
-     */
-    var root = new VisualElement(document.body),
-        velm = function(node) {
-            if (node) {
-                return new VisualElement(node);
-            } else {
-                return root;
-            }
-        };
-    /*
-     * Extend VisualElement prototype with wrapping the specified methods.
-     * @param {ArrayLike} fn
-     * @param {Object} context
-     */
-    function _delegator(fn, context) {
-        return function() {
-            var self = this,
-                elem = self.domNode,
-                ret = fn.apply(context, [elem].concat(slice.call(arguments)));
-
-            if (ret) {
-                if (ret === context) {
-                    return self;
-                } else {
-                    if (ret instanceof HTMLElement) {
-                        ret = new VisualElement(ret);
-                    } else if (langx.isArrayLike(ret)) {
-                        ret = map.call(ret, function(el) {
-                            if (el instanceof HTMLElement) {
-                                return new VisualElement(ret);
-                            } else {
-                                return el;
-                            }
-                        })
-                    }
-                }
-            }
-            return ret;
-        };
-    }
-
-    langx.mixin(velm, {
-        batch: function(nodes, action, args) {
-            nodes.forEach(function(node) {
-                var elm = (node instanceof VisualElement) ? node : velm(node);
-                elm[action].apply(elm, args);
-            });
-
-            return this;
-        },
-
-        root: new VisualElement(document.body),
-
-        VisualElement: VisualElement,
-
-        partial: function(name, fn) {
-            var props = {};
-
-            props[name] = fn;
-
-            VisualElement.partial(props);
-        },
-
-        delegate: function(names, context) {
-            var props = {};
-
-            names.forEach(function(name) {
-                props[name] = _delegator(context[name], context);
-            });
-
-            VisualElement.partial(props);
-        }
-    });
-
-    // from ./datax
-    velm.delegate([
-        "attr",
-        "data",
-        "prop",
-        "removeAttr",
-        "removeData",
-        "text",
-        "val"
-    ], datax);
-
-    // from ./eventer
-    velm.delegate([
-        "off",
-        "on",
-        "one",
-        "shortcuts",
-        "trigger"
-    ], eventer);
-
-    // from ./finder
-    velm.delegate([
-        "ancestor",
-        "ancestors",
-        "children",
-        "descendant",
-        "find",
-        "findAll",
-        "firstChild",
-        "lastChild",
-        "matches",
-        "nextSibling",
-        "nextSiblings",
-        "parent",
-        "previousSibling",
-        "previousSiblings",
-        "siblings"
-    ], finder);
-
-    /*
-     * find a dom element matched by the specified selector.
-     * @param {String} selector
-     */
-    velm.find = function(selector) {
-        if (selector === "body") {
-            return this.root;
-        } else {
-            return this.root.descendant(selector);
-        }
-    };
-
-    // from ./fx
-    velm.delegate([
-        "animate",
-        "fadeIn",
-        "fadeOut",
-        "fadeTo",
-        "fadeToggle",
-        "hide",
-        "scrollToTop",
-        "show",
-        "toggle"
-    ], fx);
-
-
-    // from ./geom
-    velm.delegate([
-        "borderExtents",
-        "boundingPosition",
-        "boundingRect",
-        "clientHeight",
-        "clientSize",
-        "clientWidth",
-        "contentRect",
-        "height",
-        "marginExtents",
-        "offsetParent",
-        "paddingExtents",
-        "pagePosition",
-        "pageRect",
-        "relativePosition",
-        "relativeRect",
-        "scrollIntoView",
-        "scrollLeft",
-        "scrollTop",
-        "size",
-        "width"
-    ], geom);
-
-    // from ./noder
-    velm.delegate([
-        "after",
-        "append",
-        "before",
-        "clone",
-        "contains",
-        "contents",
-        "empty",
-        "html",
-        "isChildOf",
-        "ownerDoc",
-        "prepend",
-        "remove",
-        "removeChild",
-        "replace",
-        "reverse",
-        "throb",
-        "traverse",
-        "wrapper",
-        "wrapperInner",
-        "unwrap"
-    ], noder);
-
-    // from ./styler
-    velm.delegate([
-        "addClass",
-        "className",
-        "css",
-        "hasClass",
-        "hide",
-        "isInvisible",
-        "removeClass",
-        "show",
-        "toggleClass"
-    ], styler);
-
-    // properties
-
-    var properties = [ 'position', 'left', 'top', 'right', 'bottom', 'width', 'height', 'border', 'borderLeft',
-    'borderTop', 'borderRight', 'borderBottom', 'borderColor', 'display', 'overflow', 'margin', 'marginLeft', 'marginTop', 'marginRight', 'marginBottom', 'padding', 'paddingLeft', 'paddingTop', 'paddingRight', 'paddingBottom', 'color',
-    'background', 'backgroundColor', 'opacity', 'fontSize', 'fontWeight', 'textAlign', 'textDecoration', 'textTransform', 'cursor', 'zIndex' ];
-
-    properties.forEach( function ( property ) {
-
-        var method = property;
-
-        VisualElement.prototype[method ] = function (value) {
-
-            this.css( property, value );
-
-            return this;
-
-        };
-
-    });
-
-    // events
-    var events = [ 'keyUp', 'keyDown', 'mouseOver', 'mouseOut', 'click', 'dblClick', 'change' ];
-
-    events.forEach( function ( event ) {
-
-        var method = event;
-
-        VisualElement.prototype[method ] = function ( callback ) {
-
-            this.on( event.toLowerCase(), callback);
-
-            return this;
-        };
-
-    });
-
-
-    return skylark.velm = velm;
-});
-define('skylark-utils/velm',[
-    "skylark-utils-dom/velm"
-], function(velm) {
-    return velm;
-});
-
-define('skylark-utils/widgets',[
-    "./skylark",
-    "./langx",
-    "./noder",
-    "./datax",
-    "./styler",
-    "./geom",
-    "./eventer",
-    "./query",
-    "./velm"
-], function(skylark,langx,noder, datax, styler, geom, eventer,query,velm) {
-	function widgets() {
-	    return widgets;
-	}
-
-	var Widget = langx.Evented.inherit({
-	    init :function(el,options) {
-	    	//for supporting init(options,el)
-	        if (langx.isHtmlNode(options)) {
-	        	var _t = el,
-	        		options = el;
-	            el = options;
-	        }
-	        if (langx.isHtmlNode(el)) { 
-	        	this.el = el;
-	    	} else {
-	    		this.el = null;
-	    	}
-	        if (options) {
-	            langx.mixin(this,options);
-	        }
-	        if (!this.cid) {
-	            this.cid = langx.uniqueId('w');
-	        }
-	        this._ensureElement();
-	    },
-
-	    // The default `tagName` of a View's element is `"div"`.
-	    tagName: 'div',
-
-	    // query delegate for element lookup, scoped to DOM elements within the
-	    // current view. This should be preferred to global lookups where possible.
-	    $: function(selector) {
-	      return this.$el.find(selector);
-	    },
-
-	    // **render** is the core function that your view should override, in order
-	    // to populate its element (`this.el`), with the appropriate HTML. The
-	    // convention is for **render** to always return `this`.
-	    render: function() {
-	      return this;
-	    },
-
-	    // Remove this view by taking the element out of the DOM, and removing any
-	    // applicable Backbone.Events listeners.
-	    remove: function() {
-	      this._removeElement();
-	      this.unlistenTo();
-	      return this;
-	    },
-
-	    // Remove this view's element from the document and all event listeners
-	    // attached to it. Exposed for subclasses using an alternative DOM
-	    // manipulation API.
-	    _removeElement: function() {
-	      this.$el.remove();
-	    },
-
-	    // Change the view's element (`this.el` property) and re-delegate the
-	    // view's events on the new element.
-	    setElement: function(element) {
-	      this.undelegateEvents();
-	      this._setElement(element);
-	      this.delegateEvents();
-	      return this;
-	    },
-
-	    // Creates the `this.el` and `this.$el` references for this view using the
-	    // given `el`. `el` can be a CSS selector or an HTML string, a jQuery
-	    // context or an element. Subclasses can override this to utilize an
-	    // alternative DOM manipulation API and are only required to set the
-	    // `this.el` property.
-	    _setElement: function(el) {
-	      this.$el = widgets.$(el);
-	      this.el = this.$el[0];
-	    },
-
-	    // Set callbacks, where `this.events` is a hash of
-	    //
-	    // *{"event selector": "callback"}*
-	    //
-	    //     {
-	    //       'mousedown .title':  'edit',
-	    //       'click .button':     'save',
-	    //       'click .open':       function(e) { ... }
-	    //     }
-	    //
-	    // pairs. Callbacks will be bound to the view, with `this` set properly.
-	    // Uses event delegation for efficiency.
-	    // Omitting the selector binds the event to `this.el`.
-	    delegateEvents: function(events) {
-	      events || (events = langx.result(this, 'events'));
-	      if (!events) return this;
-	      this.undelegateEvents();
-	      for (var key in events) {
-	        var method = events[key];
-	        if (!langx.isFunction(method)) method = this[method];
-	        if (!method) continue;
-	        var match = key.match(delegateEventSplitter);
-	        this.delegate(match[1], match[2], langx.proxy(method, this));
-	      }
-	      return this;
-	    },
-
-	    // Add a single event listener to the view's element (or a child element
-	    // using `selector`). This only works for delegate-able events: not `focus`,
-	    // `blur`, and not `change`, `submit`, and `reset` in Internet Explorer.
-	    delegate: function(eventName, selector, listener) {
-	      this.$el.on(eventName + '.delegateEvents' + this.uid, selector, listener);
-	      return this;
-	    },
-
-	    // Clears all callbacks previously bound to the view by `delegateEvents`.
-	    // You usually don't need to use this, but may wish to if you have multiple
-	    // Backbone views attached to the same DOM element.
-	    undelegateEvents: function() {
-	      if (this.$el) this.$el.off('.delegateEvents' + this.uid);
-	      return this;
-	    },
-
-	    // A finer-grained `undelegateEvents` for removing a single delegated event.
-	    // `selector` and `listener` are both optional.
-	    undelegate: function(eventName, selector, listener) {
-	      this.$el.off(eventName + '.delegateEvents' + this.uid, selector, listener);
-	      return this;
-	    },
-
-	    // Produces a DOM element to be assigned to your view. Exposed for
-	    // subclasses using an alternative DOM manipulation API.
-	    _createElement: function(tagName,attrs) {
-	      return noder.createElement(tagName,attrs);
-	    },
-
-	    // Ensure that the View has a DOM element to render into.
-	    // If `this.el` is a string, pass it through `$()`, take the first
-	    // matching element, and re-assign it to `el`. Otherwise, create
-	    // an element from the `id`, `className` and `tagName` properties.
-	    _ensureElement: function() {
-	      if (!this.el) {
-	        var attrs = langx.mixin({}, langx.result(this, 'attributes'));
-	        if (this.id) attrs.id = langx.result(this, 'id');
-	        if (this.className) attrs['class'] = langx.result(this, 'className');
-	        this.setElement(this._createElement(langx.result(this, 'tagName'),attrs));
-	        this._setAttributes(attrs);
-	      } else {
-	        this.setElement(langx.result(this, 'el'));
-	      }
-	    },
-
-	    // Set attributes from a hash on this view's element.  Exposed for
-	    // subclasses using an alternative DOM manipulation API.
-	    _setAttributes: function(attributes) {
-	      this.$el.attr(attributes);
-	    },
-
-	    // Translation function, gets the message key to be translated
-	    // and an object with context specific data as arguments:
-	    i18n: function (message, context) {
-	        message = (this.messages && this.messages[message]) || message.toString();
-	        if (context) {
-	            langx.each(context, function (key, value) {
-	                message = message.replace('{' + key + '}', value);
-	            });
-	        }
-	        return message;
-	    },
-
-		});
-
-	function defineWidgetClass(name,base,prototype) {
-
-	};
-
-	langx.mixin(widgets, {
-		$ : query,
-
-		define : defineWidgetClass,
-		Widget : Widget
-	});
-
-
-	return skylark.widgets = widgets;
-});
-
 define('skylark-jquery/core',[
-	"skylark-utils/skylark",
-	"skylark-utils/browser",
-	"skylark-utils/langx",
-	"skylark-utils/noder",
-	"skylark-utils/datax",
-	"skylark-utils/eventer",
-	"skylark-utils/finder",
-	"skylark-utils/fx",
-	"skylark-utils/styler",
-	"skylark-utils/query",
-	"skylark-utils/widgets"
-],function(skylark,browser,langx,noder,datax,eventer,finder,fx,styler,query){
+	"skylark-langx/skylark",
+	"skylark-langx/langx",
+	"skylark-utils-dom/browser",
+	"skylark-utils-dom/noder",
+	"skylark-utils-dom/datax",
+	"skylark-utils-dom/eventer",
+	"skylark-utils-dom/finder",
+	"skylark-utils-dom/fx",
+	"skylark-utils-dom/styler",
+	"skylark-utils-dom/query"
+],function(skylark,langx,browser,noder,datax,eventer,finder,fx,styler,query){
 	var filter = Array.prototype.filter,
 		slice = Array.prototype.slice;
 
@@ -10435,8 +9661,7 @@ define('skylark-jquery/main',[
     "./ajax",
     "./callbacks",
     "./deferred",
-    "./queue",
-	"skylark-utils/widgets"    
+    "./queue"
 ], function($) {
     return $;
 });
@@ -10909,6 +10134,790 @@ define( 'skylark-jqueryui/unique-id',[ "skylark-jquery", "./version" ], function
 
 } );
 
+define('skylark-utils-dom/elmx',[
+    "./dom",
+    "./langx",
+    "./datax",
+    "./eventer",
+    "./finder",
+    "./fx",
+    "./geom",
+    "./noder",
+    "./styler"
+], function(dom, langx, datax, eventer, finder, fx, geom, noder, styler) {
+    var map = Array.prototype.map,
+        slice = Array.prototype.slice;
+    /*
+     * VisualElement is a skylark class type wrapping a visule dom node,
+     * provides a number of prototype methods and supports chain calls.
+     */
+    var VisualElement = langx.klass({
+        klassName: "VisualElement",
+
+        "init": function(node) {
+            if (langx.isString(node)) {
+                node = document.getElementById(node);
+            }
+            this.domNode = node;
+        }
+    });
+    /*
+     * the VisualElement object wrapping document.body
+     */
+    var root = new VisualElement(document.body),
+        elmx = function(node) {
+            if (node) {
+                return new VisualElement(node);
+            } else {
+                return root;
+            }
+        };
+    /*
+     * Extend VisualElement prototype with wrapping the specified methods.
+     * @param {ArrayLike} fn
+     * @param {Object} context
+     */
+    function _delegator(fn, context) {
+        return function() {
+            var self = this,
+                elem = self.domNode,
+                ret = fn.apply(context, [elem].concat(slice.call(arguments)));
+
+            if (ret) {
+                if (ret === context) {
+                    return self;
+                } else {
+                    if (ret instanceof HTMLElement) {
+                        ret = new VisualElement(ret);
+                    } else if (langx.isArrayLike(ret)) {
+                        ret = map.call(ret, function(el) {
+                            if (el instanceof HTMLElement) {
+                                return new VisualElement(ret);
+                            } else {
+                                return el;
+                            }
+                        })
+                    }
+                }
+            }
+            return ret;
+        };
+    }
+
+    langx.mixin(elmx, {
+        batch: function(nodes, action, args) {
+            nodes.forEach(function(node) {
+                var elm = (node instanceof VisualElement) ? node : elmx(node);
+                elm[action].apply(elm, args);
+            });
+
+            return this;
+        },
+
+        root: new VisualElement(document.body),
+
+        VisualElement: VisualElement,
+
+        partial: function(name, fn) {
+            var props = {};
+
+            props[name] = fn;
+
+            VisualElement.partial(props);
+        },
+
+        delegate: function(names, context) {
+            var props = {};
+
+            names.forEach(function(name) {
+                props[name] = _delegator(context[name], context);
+            });
+
+            VisualElement.partial(props);
+        }
+    });
+
+    // from ./datax
+    elmx.delegate([
+        "attr",
+        "data",
+        "prop",
+        "removeAttr",
+        "removeData",
+        "text",
+        "val"
+    ], datax);
+
+    // from ./eventer
+    elmx.delegate([
+        "off",
+        "on",
+        "one",
+        "shortcuts",
+        "trigger"
+    ], eventer);
+
+    // from ./finder
+    elmx.delegate([
+        "ancestor",
+        "ancestors",
+        "children",
+        "descendant",
+        "find",
+        "findAll",
+        "firstChild",
+        "lastChild",
+        "matches",
+        "nextSibling",
+        "nextSiblings",
+        "parent",
+        "previousSibling",
+        "previousSiblings",
+        "siblings"
+    ], finder);
+
+    /*
+     * find a dom element matched by the specified selector.
+     * @param {String} selector
+     */
+    elmx.find = function(selector) {
+        if (selector === "body") {
+            return this.root;
+        } else {
+            return this.root.descendant(selector);
+        }
+    };
+
+    // from ./fx
+    elmx.delegate([
+        "animate",
+        "fadeIn",
+        "fadeOut",
+        "fadeTo",
+        "fadeToggle",
+        "hide",
+        "scrollToTop",
+        "show",
+        "toggle"
+    ], fx);
+
+
+    // from ./geom
+    elmx.delegate([
+        "borderExtents",
+        "boundingPosition",
+        "boundingRect",
+        "clientHeight",
+        "clientSize",
+        "clientWidth",
+        "contentRect",
+        "height",
+        "marginExtents",
+        "offsetParent",
+        "paddingExtents",
+        "pagePosition",
+        "pageRect",
+        "relativePosition",
+        "relativeRect",
+        "scrollIntoView",
+        "scrollLeft",
+        "scrollTop",
+        "size",
+        "width"
+    ], geom);
+
+    // from ./noder
+    elmx.delegate([
+        "after",
+        "append",
+        "before",
+        "clone",
+        "contains",
+        "contents",
+        "empty",
+        "html",
+        "isChildOf",
+        "ownerDoc",
+        "prepend",
+        "remove",
+        "removeChild",
+        "replace",
+        "reverse",
+        "throb",
+        "traverse",
+        "wrapper",
+        "wrapperInner",
+        "unwrap"
+    ], noder);
+
+    // from ./styler
+    elmx.delegate([
+        "addClass",
+        "className",
+        "css",
+        "hasClass",
+        "hide",
+        "isInvisible",
+        "removeClass",
+        "show",
+        "toggleClass"
+    ], styler);
+
+    // properties
+
+    var properties = [ 'position', 'left', 'top', 'right', 'bottom', 'width', 'height', 'border', 'borderLeft',
+    'borderTop', 'borderRight', 'borderBottom', 'borderColor', 'display', 'overflow', 'margin', 'marginLeft', 'marginTop', 'marginRight', 'marginBottom', 'padding', 'paddingLeft', 'paddingTop', 'paddingRight', 'paddingBottom', 'color',
+    'background', 'backgroundColor', 'opacity', 'fontSize', 'fontWeight', 'textAlign', 'textDecoration', 'textTransform', 'cursor', 'zIndex' ];
+
+    properties.forEach( function ( property ) {
+
+        var method = property;
+
+        VisualElement.prototype[method ] = function (value) {
+
+            this.css( property, value );
+
+            return this;
+
+        };
+
+    });
+
+    // events
+    var events = [ 'keyUp', 'keyDown', 'mouseOver', 'mouseOut', 'click', 'dblClick', 'change' ];
+
+    events.forEach( function ( event ) {
+
+        var method = event;
+
+        VisualElement.prototype[method ] = function ( callback ) {
+
+            this.on( event.toLowerCase(), callback);
+
+            return this;
+        };
+
+    });
+
+
+    return dom.elmx = elmx;
+});
+define('skylark-utils-dom/plugins',[
+    "./dom",
+    "./langx",
+    "./noder",
+    "./datax",
+    "./eventer",
+    "./finder",
+    "./geom",
+    "./styler",
+    "./fx",
+    "./query",
+    "./elmx"
+], function(dom, langx, noder, datax, eventer, finder, geom, styler, fx, $, elmx) {
+    "use strict";
+
+    var slice = Array.prototype.slice,
+        concat = Array.prototype.concat,
+        pluginKlasses = {};
+
+
+    /*
+     * Register a plugin type
+     */
+    function register( pluginKlass,shortcut) {
+        var name = pluginKlass.prototype.pluginName;
+        
+        pluginKlasses[name] = pluginKlass;
+
+        if (shortcut) {
+            elmx.partial(shortcut,$.fn[shortcut] = function(options) {
+                var args = slice.call(arguments,0);
+                args.unshift(name);
+                return this.plugin.apply(this,args);
+            });
+        }
+    }
+
+    /*
+     * Create or get a plugin instance assocated with the element,
+     * also you can execute the plugin method directory;
+     */
+    function instantiate(elm,pluginName,options) {
+
+        var pluginInstance = datax.data( elm, pluginName );
+
+        if (options === "instance") {
+            return pluginInstance;
+        }
+
+        var isMethodCall = typeof options === "string",
+            args = slice.call( arguments, 2 ),
+            returnValue = this;
+
+        if ( isMethodCall ) {
+            var methodName = options;
+
+            if ( !pluginInstance ) {
+                return langx.error( "cannot call methods on " + pluginName +
+                    " prior to initialization; " +
+                    "attempted to call method '" + methodName + "'" );
+            }
+
+            if ( !langx.isFunction( pluginInstance[ methodName ] ) || methodName.charAt( 0 ) === "_" ) {
+                return langx.error( "no such method '" + methodName + "' for " + pluginName +
+                    " plugin instance" );
+            }
+
+            return pluginInstance[ methodName ].apply( pluginInstance, args );
+
+        } else {
+            // Allow multiple hashes to be passed on init
+            if ( args.length ) {
+                options = langx.mixin.apply( langx, [{},options ].concat( args ) );
+            }
+
+            if ( pluginInstance ) {
+                pluginInstance.option( options || {} );
+            } else {
+                var pluginKlass = pluginKlasses[pluginName]; 
+                datax.data( elm, pluginName, new pluginKlass(elm,options));
+            }
+        }
+
+        return returnValue;
+    }
+
+    var Plugin =   langx.Evented.inherit({
+        klassName: "Plugin",
+
+        _construct : function(elm,options) {
+           this._elm = elm;
+           this._initOptions(options);
+        },
+
+        _initOptions : function(options) {
+          var ctor = this.constructor,
+              cache = ctor.cache = ctor.cache || {},
+              defaults = cache.defaults;
+          if (!defaults) {
+            var  ctors = [];
+            do {
+              ctors.unshift(ctor);
+              if (ctor === Plugin) {
+                break;
+              }
+              ctor = ctor.superclass;
+            } while (ctor);
+
+            defaults = cache.defaults = {};
+            for (var i=0;i<ctors.length;i++) {
+              ctor = ctors[i];
+              if (ctor.prototype.hasOwnProperty("options")) {
+                langx.mixin(defaults,ctor.prototype.options);
+              }
+            }
+          }
+          return this.options = langx.mixin({},defaults,options);
+        },
+
+
+        destroy: function() {
+            var that = this;
+
+            this._destroy();
+            // We can probably remove the unbind calls in 2.0
+            // all event bindings should go through this._on()
+            datax.removeData(this._elm,this.pluginName );
+        },
+
+        _destroy: langx.noop,
+
+        _delay: function( handler, delay ) {
+            function handlerProxy() {
+                return ( typeof handler === "string" ? instance[ handler ] : handler )
+                    .apply( instance, arguments );
+            }
+            var instance = this;
+            return setTimeout( handlerProxy, delay || 0 );
+        },
+
+        option: function( key, value ) {
+            var options = key;
+            var parts;
+            var curOption;
+            var i;
+
+            if ( arguments.length === 0 ) {
+
+                // Don't return a reference to the internal hash
+                return langx.mixin( {}, this.options );
+            }
+
+            if ( typeof key === "string" ) {
+
+                // Handle nested keys, e.g., "foo.bar" => { foo: { bar: ___ } }
+                options = {};
+                parts = key.split( "." );
+                key = parts.shift();
+                if ( parts.length ) {
+                    curOption = options[ key ] = langx.mixin( {}, this.options[ key ] );
+                    for ( i = 0; i < parts.length - 1; i++ ) {
+                        curOption[ parts[ i ] ] = curOption[ parts[ i ] ] || {};
+                        curOption = curOption[ parts[ i ] ];
+                    }
+                    key = parts.pop();
+                    if ( arguments.length === 1 ) {
+                        return curOption[ key ] === undefined ? null : curOption[ key ];
+                    }
+                    curOption[ key ] = value;
+                } else {
+                    if ( arguments.length === 1 ) {
+                        return this.options[ key ] === undefined ? null : this.options[ key ];
+                    }
+                    options[ key ] = value;
+                }
+            }
+
+            this._setOptions( options );
+
+            return this;
+        },
+
+        _setOptions: function( options ) {
+            var key;
+
+            for ( key in options ) {
+                this._setOption( key, options[ key ] );
+            }
+
+            return this;
+        },
+
+        _setOption: function( key, value ) {
+
+            this.options[ key ] = value;
+
+            return this;
+        }
+
+    });
+
+    $.fn.plugin = function(name,options) {
+        var args = slice.call( arguments, 1 ),
+            self = this,
+            returnValue = this;
+
+        this.each(function(){
+            returnValue = instantiate.apply(self,[this,name].concat(args));
+        });
+        return returnValue;
+    };
+
+    elmx.partial("plugin",function(name,options) {
+        var args = slice.call( arguments, 1 );
+        return instantiate.apply(this,[this,name].concat(args));
+    }); 
+
+
+    function plugins() {
+        return plugins;
+    }
+     
+    langx.mixin(plugins, {
+        instantiate : instantiate,
+        
+        Plugin : Plugin,
+
+        register : register
+
+    });
+
+    return plugins;
+});
+define('skylark-jqueryui-interact/JqueryPlugin',[
+	"skylark-langx/types",
+	"skylark-langx/objects",
+	"skylark-langx/arrays",
+	"skylark-langx/langx",
+	"skylark-utils-dom/datax",
+	"skylark-utils-dom/eventer",
+	"skylark-utils-dom/plugins",
+	"skylark-utils-dom/query",
+],function(types, objects, arrays, langx, datax, eventer, plugins, $){
+
+    var pluginUuid = 0;
+
+	var JqPlugin = plugins.Plugin.inherit({
+		klassName : "JqPlugin",
+
+        pluginEventPrefix: "",
+
+        options: {
+            // Callbacks
+            create: null
+        },
+
+        destroy: function() {
+            this.overrided();
+
+            // We can probably remove the unbind calls in 2.0
+            // all event bindings should go through this._on()
+            this.element
+                .off( this.eventNamespace );
+
+            this.plugin()
+                .off( this.eventNamespace )
+                .removeAttr( "aria-disabled" );
+
+            // Clean up events and states
+            this.bindings.off( this.eventNamespace );
+        },
+
+        _construct : function(element,options) {
+            //this.options = langx.mixin( {}, this.options );
+
+            element = $( element || this.defaultElement || this )[ 0 ];
+
+            this.overrided(element,options);
+            
+            this.element = $( element );
+            this.uuid = pluginUuid++;
+            this.eventNamespace = "." + this.pluginName + this.uuid;
+
+            this.bindings = $();
+            this.classesElementLookup = {};
+
+			this.hoverable = $();
+			this.focusable = $();
+
+            if ( element !== this ) {
+                datax.data( element, this.pluginName, this );
+                this._on( true, this.element, {
+                    remove: function( event ) {
+                        if ( event.target === element ) {
+                            this.destroy();
+                        }
+                    }
+                } );
+                this.document = $( element.style ?
+
+                    // Element within the document
+                    element.ownerDocument :
+
+                    // Element is window or document
+                    element.document || element );
+                this.window = $( this.document[ 0 ].defaultView || this.document[ 0 ].parentWindow );
+            }
+
+//            this.options = langx.mixin( {},
+//                this.options,
+//                this._getCreateOptions(),
+//                options );
+
+            this._create();
+
+            this._trigger( "create", null, this._getCreateEventData() );
+
+            this._init();
+        },
+
+//        _getCreateOptions: function() {
+//            return {};
+//        },
+
+        _getCreateEventData: langx.noop,
+
+        _create: langx.noop,
+
+        _init: langx.noop,
+
+		_classes: function( options ) {
+			var full = [];
+			var that = this;
+
+			options = objects.mixin( {
+				element: this.element,
+				classes: this.options.classes || {}
+			}, options );
+
+
+			function bindRemoveEvent() {
+				options.element.each( function( _, element ) {
+					var isTracked = langx.map( that.classesElementLookup, function( elements ) {
+						return elements;
+					} )
+						.some( function(elements ) {
+							return $(elements).is( element );
+						} );
+
+					if ( !isTracked ) {
+						that._on( $( element ), {
+							remove: "_untrackClassesElement"
+						} );
+					}
+				} );
+			}
+
+			function processClassString( classes, checkOption ) {
+				var current, i;
+				for ( i = 0; i < classes.length; i++ ) {
+					current = that.classesElementLookup[ classes[ i ] ] || $();
+					if ( options.add ) {
+						bindRemoveEvent();
+						current = $( langx.uniq( current.get().concat( options.element.get() ) ) );
+					} else {
+						current = $( current.not( options.element ).get() );
+					}
+					that.classesElementLookup[ classes[ i ] ] = current;
+					full.push( classes[ i ] );
+					if ( checkOption && options.classes[ classes[ i ] ] ) {
+						full.push( options.classes[ classes[ i ] ] );
+					}
+				}
+			}
+
+			if ( options.keys ) {
+				processClassString( options.keys.match( /\S+/g ) || [], true );
+			}
+			if ( options.extra ) {
+				processClassString( options.extra.match( /\S+/g ) || [] );
+			}
+
+			return full.join( " " );
+		},
+
+		_untrackClassesElement: function( event ) {
+			var that = this;
+			langx.each( that.classesElementLookup, function( key, value ) {
+				if ( arrays.inArray( event.target, value ) !== -1 ) {
+					that.classesElementLookup[ key ] = $( value.not( event.target ).get() );
+				}
+			} );
+
+			this._off( $( event.target ) );
+		},
+
+		_removeClass: function( element, keys, extra ) {
+			return this._toggleClass( element, keys, extra, false );
+		},
+
+		_addClass: function( element, keys, extra ) {
+			return this._toggleClass( element, keys, extra, true );
+		},
+
+		_toggleClass: function( element, keys, extra, add ) {
+			add = ( typeof add === "boolean" ) ? add : extra;
+			var shift = ( typeof element === "string" || element === null ),
+				options = {
+					extra: shift ? keys : extra,
+					keys: shift ? element : keys,
+					element: shift ? this.element : element,
+					add: add
+				};
+			options.element.toggleClass( this._classes( options ), add );
+			return this;
+		},
+
+		_on: function( suppressDisabledCheck, element, handlers ) {
+			var delegateElement;
+			var instance = this;
+
+			// No suppressDisabledCheck flag, shuffle arguments
+			if ( typeof suppressDisabledCheck !== "boolean" ) {
+				handlers = element;
+				element = suppressDisabledCheck;
+				suppressDisabledCheck = false;
+			}
+
+			// No element argument, shuffle and use this.element
+			if ( !handlers ) {
+				handlers = element;
+				element = this.element;
+				delegateElement = this.widget();
+			} else {
+				element = delegateElement = $( element );
+				this.bindings = this.bindings.add( element );
+			}
+
+			objects.each( handlers, function( event, handler ) {
+				function handlerProxy() {
+
+					// Allow widgets to customize the disabled handling
+					// - disabled as an array instead of boolean
+					// - disabled class as method for disabling individual parts
+					if ( !suppressDisabledCheck &&
+							( instance.options.disabled === true ||
+							$( this ).hasClass( "ui-state-disabled" ) ) ) {
+						return;
+					}
+					return ( typeof handler === "string" ? instance[ handler ] : handler )
+						.apply( instance, arguments );
+				}
+
+				// Copy the guid so direct unbinding works
+				if ( typeof handler !== "string" ) {
+					handlerProxy.guid = handler.guid =
+						handler.guid || handlerProxy.guid || $.guid++;
+				}
+
+				var match = event.match( /^([\w:-]*)\s*(.*)$/ );
+				var eventName = match[ 1 ] + instance.eventNamespace;
+				var selector = match[ 2 ];
+
+				if ( selector ) {
+					delegateElement.on( eventName, selector, handlerProxy );
+				} else {
+					element.on( eventName, handlerProxy );
+				}
+			} );
+		},
+
+		_off: function( element, eventName ) {
+			eventName = ( eventName || "" ).split( " " ).join( this.eventNamespace + " " ) +
+				this.eventNamespace;
+			element.off( eventName );
+
+			// Clear the stack to avoid memory leaks (#10056)
+			this.bindings = $( this.bindings.not( element ).get() );
+			this.focusable = $( this.focusable.not( element ).get() );
+			this.hoverable = $( this.hoverable.not( element ).get() );
+		},
+
+		_trigger: function( type, event, data ) {
+			var prop, orig;
+			var callback = this.options[ type ];
+
+			data = data || {};
+			event = eventer.proxy( event );
+			event.type = ( type === this.widgetEventPrefix ?
+				type :
+				this.widgetEventPrefix + type ).toLowerCase();
+
+			// The original event may come from any element
+			// so we need to reset the target on the new event
+			event.target = this.element[ 0 ];
+
+			// Copy original event properties over to the new event
+			orig = event.originalEvent;
+			if ( orig ) {
+				for ( prop in orig ) {
+					if ( !( prop in event ) ) {
+						event[ prop ] = orig[ prop ];
+					}
+				}
+			}
+
+			this.element.trigger( event, data );
+			return !( types.isFunction( callback ) &&
+				callback.apply( this.element[ 0 ], [ event ].concat( data ) ) === false ||
+				event.isDefaultPrevented() );
+		}
+
+	});
+
+	return JqPlugin;
+});
 /*!
  * jQuery UI Widget @VERSION
  * http://jqueryui.com
@@ -10926,10 +10935,11 @@ define( 'skylark-jqueryui/unique-id',[ "skylark-jquery", "./version" ], function
 
 define( 'skylark-jqueryui/widget',[ 
 	"skylark-langx/langx",
-	"skylark-utils/widgets",
+	"skylark-utils-dom/plugins",
+	"skylark-jqueryui-interact/JqueryPlugin",
 	"skylark-jquery", 
 	"./version" 
-],  function(langx,swidgets, $ ) {
+],  function(langx,splugins, JqPlugin, $ ) {
 
 	var widgetUuid = 0;
 	var widgetHasOwnProperty = Array.prototype.hasOwnProperty;
@@ -10992,6 +11002,7 @@ define( 'skylark-jqueryui/widget',[
 			name : fullName,
 			namespace: namespace,
 			widgetName: name,
+			pluginName : "jqueryui." + (namespace ? namespace + "." : "") + name,
 			widgetFullName: fullName
 		} );
 
@@ -11097,7 +11108,9 @@ define( 'skylark-jqueryui/widget',[
 			base._childConstructors.push( constructor );
 		}
 
-		$.widget.bridge( name, constructor );
+		//$.widget.bridge( name, constructor );
+
+		splugins.register(constructor,name);
 
 		return constructor;
 	};
@@ -11132,76 +11145,8 @@ define( 'skylark-jqueryui/widget',[
 		return target;
 	};
 
-	$.widget.bridge = function( name, object ) {
-		var fullName = object.prototype.widgetFullName || name;
-		$.fn[ name ] = function( options ) {
-			var isMethodCall = typeof options === "string";
-			var args = widgetSlice.call( arguments, 1 );
-			var returnValue = this;
 
-			if ( isMethodCall ) {
-
-				// If this is an empty collection, we need to have the instance method
-				// return undefined instead of the jQuery instance
-				if ( !this.length && options === "instance" ) {
-					returnValue = undefined;
-				} else {
-					this.each( function() {
-						var methodValue;
-						var instance = $.data( this, fullName );
-
-						if ( options === "instance" ) {
-							returnValue = instance;
-							return false;
-						}
-
-						if ( !instance ) {
-							return $.error( "cannot call methods on " + name +
-								" prior to initialization; " +
-								"attempted to call method '" + options + "'" );
-						}
-
-						if ( !$.isFunction( instance[ options ] ) || options.charAt( 0 ) === "_" ) {
-							return $.error( "no such method '" + options + "' for " + name +
-								" widget instance" );
-						}
-
-						methodValue = instance[ options ].apply( instance, args );
-
-						if ( methodValue !== instance && methodValue !== undefined ) {
-							returnValue = methodValue && methodValue.jquery ?
-								returnValue.pushStack( methodValue.get() ) :
-								methodValue;
-							return false;
-						}
-					} );
-				}
-			} else {
-
-				// Allow multiple hashes to be passed on init
-				if ( args.length ) {
-					options = $.widget.extend.apply( null, [ options ].concat( args ) );
-				}
-
-				this.each( function() {
-					var instance = $.data( this, fullName );
-					if ( instance ) {
-						instance.option( options || {} );
-						if ( instance._init ) {
-							instance._init();
-						}
-					} else {
-						$.data( this, fullName, new object( options, this ) );
-					}
-				} );
-			}
-
-			return returnValue;
-		};
-	};
-
-
-	$.Widget = 	 langx.Evented.inherit({
+	$.Widget = 	 JqPlugin.inherit({
 		widgetName: "widget",
 		widgetEventPrefix: "",
 		defaultElement: "<div>",
@@ -11214,10 +11159,14 @@ define( 'skylark-jqueryui/widget',[
 			create: null
 		},
 
-		init : function(options,element) {
-			this.options = $.widget.extend( {}, this.options );
+	     _initOptions : function(options) {
+	     	options = langx.mixin(this._createOptions(),options);
 
-			this._createWidget( options, element );
+			this.overrided(options);
+		},
+
+		_createOptions : function() {
+			return {};
 		},
 
 		_super : function() {
@@ -11225,145 +11174,18 @@ define( 'skylark-jqueryui/widget',[
 				return this.overrided.apply(this,arguments);
 			}
 		},
+
 		_superApply : function ( args ) {
 			if (this.overrided) {
 				return this.overrided.apply(this,args);
 			}
 		},
 
-		_createWidget: function( options, element ) {
-			element = $( element || this.defaultElement || this )[ 0 ];
-			this.element = $( element );
-			this.uuid = widgetUuid++;
-			this.eventNamespace = "." + this.widgetName + this.uuid;
-
-			this.bindings = $();
-			this.hoverable = $();
-			this.focusable = $();
-			this.classesElementLookup = {};
-
-			if ( element !== this ) {
-				$.data( element, this.widgetFullName, this );
-				this._on( true, this.element, {
-					remove: function( event ) {
-						if ( event.target === element ) {
-							this.destroy();
-						}
-					}
-				} );
-				this.document = $( element.style ?
-
-					// Element within the document
-					element.ownerDocument :
-
-					// Element is window or document
-					element.document || element );
-				this.window = $( this.document[ 0 ].defaultView || this.document[ 0 ].parentWindow );
-			}
-
-			this.options = $.widget.extend( {},
-				this.options,
-				this._getCreateOptions(),
-				options );
-
-			this._create();
-
-			if ( this.options.disabled ) {
-				this._setOptionDisabled( this.options.disabled );
-			}
-
-			this._trigger( "create", null, this._getCreateEventData() );
-			this._init();
-		},
-
-		_getCreateOptions: function() {
-			return {};
-		},
-
-		_getCreateEventData: $.noop,
-
-		_create: $.noop,
-
-		_init: $.noop,
-
-		destroy: function() {
-			var that = this;
-
-			this._destroy();
-			$.each( this.classesElementLookup, function( key, value ) {
-				that._removeClass( value, key );
-			} );
-
-			// We can probably remove the unbind calls in 2.0
-			// all event bindings should go through this._on()
-			this.element
-				.off( this.eventNamespace )
-				.removeData( this.widgetFullName );
-			this.widget()
-				.off( this.eventNamespace )
-				.removeAttr( "aria-disabled" );
-
-			// Clean up events and states
-			this.bindings.off( this.eventNamespace );
-		},
-
-		_destroy: $.noop,
 
 		widget: function() {
 			return this.element;
 		},
 
-		option: function( key, value ) {
-			var options = key;
-			var parts;
-			var curOption;
-			var i;
-
-			if ( arguments.length === 0 ) {
-
-				// Don't return a reference to the internal hash
-				return $.widget.extend( {}, this.options );
-			}
-
-			if ( typeof key === "string" ) {
-
-				// Handle nested keys, e.g., "foo.bar" => { foo: { bar: ___ } }
-				options = {};
-				parts = key.split( "." );
-				key = parts.shift();
-				if ( parts.length ) {
-					curOption = options[ key ] = $.widget.extend( {}, this.options[ key ] );
-					for ( i = 0; i < parts.length - 1; i++ ) {
-						curOption[ parts[ i ] ] = curOption[ parts[ i ] ] || {};
-						curOption = curOption[ parts[ i ] ];
-					}
-					key = parts.pop();
-					if ( arguments.length === 1 ) {
-						return curOption[ key ] === undefined ? null : curOption[ key ];
-					}
-					curOption[ key ] = value;
-				} else {
-					if ( arguments.length === 1 ) {
-						return this.options[ key ] === undefined ? null : this.options[ key ];
-					}
-					options[ key ] = value;
-				}
-			}
-
-			this._setOptions( options );
-
-			return this;
-		},
-
-		_setOptions: function( options ) {
-			var key;
-
-			for ( key in options ) {
-				this._setOption( key, options[ key ] );
-			}
-
-			return this;
-		},
 
 		_setOption: function( key, value ) {
 			if ( key === "classes" ) {
@@ -11428,156 +11250,6 @@ define( 'skylark-jqueryui/widget',[
 			return this._setOptions( { disabled: true } );
 		},
 
-		_classes: function( options ) {
-			var full = [];
-			var that = this;
-
-			options = $.extend( {
-				element: this.element,
-				classes: this.options.classes || {}
-			}, options );
-
-			function bindRemoveEvent() {
-				options.element.each( function( _, element ) {
-					var isTracked = $.map( that.classesElementLookup, function( elements ) {
-						return elements;
-					} )
-						.some( function(elements ) {
-							return $(elements).is( element );
-						} );
-
-					if ( !isTracked ) {
-						that._on( $( element ), {
-							remove: "_untrackClassesElement"
-						} );
-					}
-				} );
-			}
-
-			function processClassString( classes, checkOption ) {
-				var current, i;
-				for ( i = 0; i < classes.length; i++ ) {
-					current = that.classesElementLookup[ classes[ i ] ] || $();
-					if ( options.add ) {
-						bindRemoveEvent();
-						current = $( $.uniqueSort( current.get().concat( options.element.get() ) ) );
-					} else {
-						current = $( current.not( options.element ).get() );
-					}
-					that.classesElementLookup[ classes[ i ] ] = current;
-					full.push( classes[ i ] );
-					if ( checkOption && options.classes[ classes[ i ] ] ) {
-						full.push( options.classes[ classes[ i ] ] );
-					}
-				}
-			}
-
-			if ( options.keys ) {
-				processClassString( options.keys.match( /\S+/g ) || [], true );
-			}
-			if ( options.extra ) {
-				processClassString( options.extra.match( /\S+/g ) || [] );
-			}
-
-			return full.join( " " );
-		},
-
-		_untrackClassesElement: function( event ) {
-			var that = this;
-			$.each( that.classesElementLookup, function( key, value ) {
-				if ( $.inArray( event.target, value ) !== -1 ) {
-					that.classesElementLookup[ key ] = $( value.not( event.target ).get() );
-				}
-			} );
-
-			this._off( $( event.target ) );
-		},
-
-		_removeClass: function( element, keys, extra ) {
-			return this._toggleClass( element, keys, extra, false );
-		},
-
-		_addClass: function( element, keys, extra ) {
-			return this._toggleClass( element, keys, extra, true );
-		},
-
-		_toggleClass: function( element, keys, extra, add ) {
-			add = ( typeof add === "boolean" ) ? add : extra;
-			var shift = ( typeof element === "string" || element === null ),
-				options = {
-					extra: shift ? keys : extra,
-					keys: shift ? element : keys,
-					element: shift ? this.element : element,
-					add: add
-				};
-			options.element.toggleClass( this._classes( options ), add );
-			return this;
-		},
-
-		_on: function( suppressDisabledCheck, element, handlers ) {
-			var delegateElement;
-			var instance = this;
-
-			// No suppressDisabledCheck flag, shuffle arguments
-			if ( typeof suppressDisabledCheck !== "boolean" ) {
-				handlers = element;
-				element = suppressDisabledCheck;
-				suppressDisabledCheck = false;
-			}
-
-			// No element argument, shuffle and use this.element
-			if ( !handlers ) {
-				handlers = element;
-				element = this.element;
-				delegateElement = this.widget();
-			} else {
-				element = delegateElement = $( element );
-				this.bindings = this.bindings.add( element );
-			}
-
-			$.each( handlers, function( event, handler ) {
-				function handlerProxy() {
-
-					// Allow widgets to customize the disabled handling
-					// - disabled as an array instead of boolean
-					// - disabled class as method for disabling individual parts
-					if ( !suppressDisabledCheck &&
-							( instance.options.disabled === true ||
-							$( this ).hasClass( "ui-state-disabled" ) ) ) {
-						return;
-					}
-					return ( typeof handler === "string" ? instance[ handler ] : handler )
-						.apply( instance, arguments );
-				}
-
-				// Copy the guid so direct unbinding works
-				if ( typeof handler !== "string" ) {
-					handlerProxy.guid = handler.guid =
-						handler.guid || handlerProxy.guid || $.guid++;
-				}
-
-				var match = event.match( /^([\w:-]*)\s*(.*)$/ );
-				var eventName = match[ 1 ] + instance.eventNamespace;
-				var selector = match[ 2 ];
-
-				if ( selector ) {
-					delegateElement.on( eventName, selector, handlerProxy );
-				} else {
-					element.on( eventName, handlerProxy );
-				}
-			} );
-		},
-
-		_off: function( element, eventName ) {
-			eventName = ( eventName || "" ).split( " " ).join( this.eventNamespace + " " ) +
-				this.eventNamespace;
-			element.off( eventName );
-
-			// Clear the stack to avoid memory leaks (#10056)
-			this.bindings = $( this.bindings.not( element ).get() );
-			this.focusable = $( this.focusable.not( element ).get() );
-			this.hoverable = $( this.hoverable.not( element ).get() );
-		},
 
 		_delay: function( handler, delay ) {
 			function handlerProxy() {
@@ -11610,37 +11282,8 @@ define( 'skylark-jqueryui/widget',[
 					this._removeClass( $( event.currentTarget ), null, "ui-state-focus" );
 				}
 			} );
-		},
-
-		_trigger: function( type, event, data ) {
-			var prop, orig;
-			var callback = this.options[ type ];
-
-			data = data || {};
-			event = $.Event( event );
-			event.type = ( type === this.widgetEventPrefix ?
-				type :
-				this.widgetEventPrefix + type ).toLowerCase();
-
-			// The original event may come from any element
-			// so we need to reset the target on the new event
-			event.target = this.element[ 0 ];
-
-			// Copy original event properties over to the new event
-			orig = event.originalEvent;
-			if ( orig ) {
-				for ( prop in orig ) {
-					if ( !( prop in event ) ) {
-						event[ prop ] = orig[ prop ];
-					}
-				}
-			}
-
-			this.element.trigger( event, data );
-			return !( $.isFunction( callback ) &&
-				callback.apply( this.element[ 0 ], [ event ].concat( data ) ) === false ||
-				event.isDefaultPrevented() );
 		}
+
 	});
 
 	$.Widget._childConstructors = [];
@@ -11711,11 +11354,11 @@ define( 'skylark-jqueryui/widget',[
 //>>css.theme: ../../themes/base/theme.css
 
 define( 'skylark-jqueryui/widgets/accordion',[
-			"skylark-jquery",
-			"../version",
-			"../keycode",
-			"../unique-id",
-			"../widget"
+	"skylark-jquery",
+	"../version",
+	"../keycode",
+	"../unique-id",
+	"../widget"
 ],function( $ ) {
 
 return $.widget( "ui.accordion", {
@@ -13498,13 +13141,13 @@ return $.widget( "ui.menu", {
 //>>css.theme: ../../themes/base/theme.css
 
 define( 'skylark-jqueryui/widgets/autocomplete',[
-			"skylark-jquery",
-			"./menu",
-			"../keycode",
-			"../position",
-			"../safe-active-element",
-			"../version",
-			"../widget"
+	"skylark-jquery",
+	"./menu",
+	"../keycode",
+	"../position",
+	"../safe-active-element",
+	"../version",
+	"../widget"
 ],function( $ ) {
 
 $.widget( "ui.autocomplete", {
@@ -14159,8 +13802,8 @@ return $.ui.autocomplete;
 //>>css.theme: ../../themes/base/theme.css
 
 define( 'skylark-jqueryui/widgets/controlgroup',[
-			"skylark-jquery",
-			"../widget"
+	"skylark-jquery",
+	"../widget"
 ],function( $ ) {
 var controlgroupCornerRegex = /ui-corner-([a-z]){2,6}/g;
 
@@ -14517,11 +14160,11 @@ return $.ui.formResetMixin = {
 //>>css.theme: ../../themes/base/theme.css
 
 define( 'skylark-jqueryui/widgets/checkboxradio',[
-			"skylark-jquery",
-			"../escape-selector",
-			"../form-reset-mixin",
-			"../labels",
-			"../widget"
+	"skylark-jquery",
+	"../escape-selector",
+	"../form-reset-mixin",
+	"../labels",
+	"../widget"
 ],function( $ ) {
 
 $.widget( "ui.checkboxradio", [ $.ui.formResetMixin, {
@@ -14790,15 +14433,15 @@ return $.ui.checkboxradio;
 //>>css.theme: ../../themes/base/theme.css
 
 define( 'skylark-jqueryui/widgets/button',[
-			"skylark-jquery",
+	"skylark-jquery",
 
-			// These are only for backcompat
-			// TODO: Remove after 1.12
-			"./controlgroup",
-			"./checkboxradio",
+	// These are only for backcompat
+	// TODO: Remove after 1.12
+	"./controlgroup",
+	"./checkboxradio",
 
-			"../keycode",
-			"../widget"
+	"../keycode",
+	"../widget"
 ],function( $ ) {
 
 $.widget( "ui.button", {
@@ -15228,9 +14871,9 @@ return $.ui.button;
 //>>css.theme: ../../themes/base/theme.css
 
 define( 'skylark-jqueryui/widgets/datepicker',[
-			"skylark-jquery",
-			"../version",
-			"../keycode"
+	"skylark-jquery",
+	"../version",
+	"../keycode"
 ],function( $ ) {
 
 $.extend( $.ui, { datepicker: { version: "@VERSION" } } );
@@ -19991,20 +19634,20 @@ return $.ui.resizable;
 //>>css.theme: ../../themes/base/theme.css
 
 define( 'skylark-jqueryui/widgets/dialog',[
-			"skylark-jquery",
-			"./button",
-			"./draggable",
-			"./mouse",
-			"./resizable",
-			"../focusable",
-			"../keycode",
-			"../position",
-			"../safe-active-element",
-			"../safe-blur",
-			"../tabbable",
-			"../unique-id",
-			"../version",
-			"../widget"
+	"skylark-jquery",
+	"./button",
+	"./draggable",
+	"./mouse",
+	"./resizable",
+	"../focusable",
+	"../keycode",
+	"../position",
+	"../safe-active-element",
+	"../safe-blur",
+	"../tabbable",
+	"../unique-id",
+	"../version",
+	"../widget"
 ],function( $ ) {
 
 $.widget( "ui.dialog", {

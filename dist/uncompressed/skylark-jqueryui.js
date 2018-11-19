@@ -56,7 +56,7 @@
                 args.push(require(dep));
             })
 
-            module.exports = module.factory.apply(window, args);
+            module.exports = module.factory.apply(globals, args);
         }
         return module.exports;
     };
@@ -72,7 +72,7 @@
     var skylarkjs = require("skylark-langx/skylark");
 
     if (isCmd) {
-      exports = skylarkjs;
+      module.exports = skylarkjs;
     } else {
       globals.skylarkjs  = skylarkjs;
     }
@@ -563,10 +563,11 @@ define( 'skylark-jqueryui/unique-id',[ "skylark-jquery", "./version" ], function
 
 define( 'skylark-jqueryui/widget',[ 
 	"skylark-langx/langx",
-	"skylark-utils/widgets",
+	"skylark-utils-dom/plugins",
+	"skylark-jqueryui-interact/JqueryPlugin",
 	"skylark-jquery", 
 	"./version" 
-],  function(langx,swidgets, $ ) {
+],  function(langx,splugins, JqPlugin, $ ) {
 
 	var widgetUuid = 0;
 	var widgetHasOwnProperty = Array.prototype.hasOwnProperty;
@@ -629,6 +630,7 @@ define( 'skylark-jqueryui/widget',[
 			name : fullName,
 			namespace: namespace,
 			widgetName: name,
+			pluginName : "jqueryui." + (namespace ? namespace + "." : "") + name,
 			widgetFullName: fullName
 		} );
 
@@ -734,7 +736,9 @@ define( 'skylark-jqueryui/widget',[
 			base._childConstructors.push( constructor );
 		}
 
-		$.widget.bridge( name, constructor );
+		//$.widget.bridge( name, constructor );
+
+		splugins.register(constructor,name);
 
 		return constructor;
 	};
@@ -769,76 +773,8 @@ define( 'skylark-jqueryui/widget',[
 		return target;
 	};
 
-	$.widget.bridge = function( name, object ) {
-		var fullName = object.prototype.widgetFullName || name;
-		$.fn[ name ] = function( options ) {
-			var isMethodCall = typeof options === "string";
-			var args = widgetSlice.call( arguments, 1 );
-			var returnValue = this;
 
-			if ( isMethodCall ) {
-
-				// If this is an empty collection, we need to have the instance method
-				// return undefined instead of the jQuery instance
-				if ( !this.length && options === "instance" ) {
-					returnValue = undefined;
-				} else {
-					this.each( function() {
-						var methodValue;
-						var instance = $.data( this, fullName );
-
-						if ( options === "instance" ) {
-							returnValue = instance;
-							return false;
-						}
-
-						if ( !instance ) {
-							return $.error( "cannot call methods on " + name +
-								" prior to initialization; " +
-								"attempted to call method '" + options + "'" );
-						}
-
-						if ( !$.isFunction( instance[ options ] ) || options.charAt( 0 ) === "_" ) {
-							return $.error( "no such method '" + options + "' for " + name +
-								" widget instance" );
-						}
-
-						methodValue = instance[ options ].apply( instance, args );
-
-						if ( methodValue !== instance && methodValue !== undefined ) {
-							returnValue = methodValue && methodValue.jquery ?
-								returnValue.pushStack( methodValue.get() ) :
-								methodValue;
-							return false;
-						}
-					} );
-				}
-			} else {
-
-				// Allow multiple hashes to be passed on init
-				if ( args.length ) {
-					options = $.widget.extend.apply( null, [ options ].concat( args ) );
-				}
-
-				this.each( function() {
-					var instance = $.data( this, fullName );
-					if ( instance ) {
-						instance.option( options || {} );
-						if ( instance._init ) {
-							instance._init();
-						}
-					} else {
-						$.data( this, fullName, new object( options, this ) );
-					}
-				} );
-			}
-
-			return returnValue;
-		};
-	};
-
-
-	$.Widget = 	 langx.Evented.inherit({
+	$.Widget = 	 JqPlugin.inherit({
 		widgetName: "widget",
 		widgetEventPrefix: "",
 		defaultElement: "<div>",
@@ -851,10 +787,14 @@ define( 'skylark-jqueryui/widget',[
 			create: null
 		},
 
-		init : function(options,element) {
-			this.options = $.widget.extend( {}, this.options );
+	     _initOptions : function(options) {
+	     	options = langx.mixin(this._createOptions(),options);
 
-			this._createWidget( options, element );
+			this.overrided(options);
+		},
+
+		_createOptions : function() {
+			return {};
 		},
 
 		_super : function() {
@@ -862,145 +802,18 @@ define( 'skylark-jqueryui/widget',[
 				return this.overrided.apply(this,arguments);
 			}
 		},
+
 		_superApply : function ( args ) {
 			if (this.overrided) {
 				return this.overrided.apply(this,args);
 			}
 		},
 
-		_createWidget: function( options, element ) {
-			element = $( element || this.defaultElement || this )[ 0 ];
-			this.element = $( element );
-			this.uuid = widgetUuid++;
-			this.eventNamespace = "." + this.widgetName + this.uuid;
-
-			this.bindings = $();
-			this.hoverable = $();
-			this.focusable = $();
-			this.classesElementLookup = {};
-
-			if ( element !== this ) {
-				$.data( element, this.widgetFullName, this );
-				this._on( true, this.element, {
-					remove: function( event ) {
-						if ( event.target === element ) {
-							this.destroy();
-						}
-					}
-				} );
-				this.document = $( element.style ?
-
-					// Element within the document
-					element.ownerDocument :
-
-					// Element is window or document
-					element.document || element );
-				this.window = $( this.document[ 0 ].defaultView || this.document[ 0 ].parentWindow );
-			}
-
-			this.options = $.widget.extend( {},
-				this.options,
-				this._getCreateOptions(),
-				options );
-
-			this._create();
-
-			if ( this.options.disabled ) {
-				this._setOptionDisabled( this.options.disabled );
-			}
-
-			this._trigger( "create", null, this._getCreateEventData() );
-			this._init();
-		},
-
-		_getCreateOptions: function() {
-			return {};
-		},
-
-		_getCreateEventData: $.noop,
-
-		_create: $.noop,
-
-		_init: $.noop,
-
-		destroy: function() {
-			var that = this;
-
-			this._destroy();
-			$.each( this.classesElementLookup, function( key, value ) {
-				that._removeClass( value, key );
-			} );
-
-			// We can probably remove the unbind calls in 2.0
-			// all event bindings should go through this._on()
-			this.element
-				.off( this.eventNamespace )
-				.removeData( this.widgetFullName );
-			this.widget()
-				.off( this.eventNamespace )
-				.removeAttr( "aria-disabled" );
-
-			// Clean up events and states
-			this.bindings.off( this.eventNamespace );
-		},
-
-		_destroy: $.noop,
 
 		widget: function() {
 			return this.element;
 		},
 
-		option: function( key, value ) {
-			var options = key;
-			var parts;
-			var curOption;
-			var i;
-
-			if ( arguments.length === 0 ) {
-
-				// Don't return a reference to the internal hash
-				return $.widget.extend( {}, this.options );
-			}
-
-			if ( typeof key === "string" ) {
-
-				// Handle nested keys, e.g., "foo.bar" => { foo: { bar: ___ } }
-				options = {};
-				parts = key.split( "." );
-				key = parts.shift();
-				if ( parts.length ) {
-					curOption = options[ key ] = $.widget.extend( {}, this.options[ key ] );
-					for ( i = 0; i < parts.length - 1; i++ ) {
-						curOption[ parts[ i ] ] = curOption[ parts[ i ] ] || {};
-						curOption = curOption[ parts[ i ] ];
-					}
-					key = parts.pop();
-					if ( arguments.length === 1 ) {
-						return curOption[ key ] === undefined ? null : curOption[ key ];
-					}
-					curOption[ key ] = value;
-				} else {
-					if ( arguments.length === 1 ) {
-						return this.options[ key ] === undefined ? null : this.options[ key ];
-					}
-					options[ key ] = value;
-				}
-			}
-
-			this._setOptions( options );
-
-			return this;
-		},
-
-		_setOptions: function( options ) {
-			var key;
-
-			for ( key in options ) {
-				this._setOption( key, options[ key ] );
-			}
-
-			return this;
-		},
 
 		_setOption: function( key, value ) {
 			if ( key === "classes" ) {
@@ -1065,156 +878,6 @@ define( 'skylark-jqueryui/widget',[
 			return this._setOptions( { disabled: true } );
 		},
 
-		_classes: function( options ) {
-			var full = [];
-			var that = this;
-
-			options = $.extend( {
-				element: this.element,
-				classes: this.options.classes || {}
-			}, options );
-
-			function bindRemoveEvent() {
-				options.element.each( function( _, element ) {
-					var isTracked = $.map( that.classesElementLookup, function( elements ) {
-						return elements;
-					} )
-						.some( function(elements ) {
-							return $(elements).is( element );
-						} );
-
-					if ( !isTracked ) {
-						that._on( $( element ), {
-							remove: "_untrackClassesElement"
-						} );
-					}
-				} );
-			}
-
-			function processClassString( classes, checkOption ) {
-				var current, i;
-				for ( i = 0; i < classes.length; i++ ) {
-					current = that.classesElementLookup[ classes[ i ] ] || $();
-					if ( options.add ) {
-						bindRemoveEvent();
-						current = $( $.uniqueSort( current.get().concat( options.element.get() ) ) );
-					} else {
-						current = $( current.not( options.element ).get() );
-					}
-					that.classesElementLookup[ classes[ i ] ] = current;
-					full.push( classes[ i ] );
-					if ( checkOption && options.classes[ classes[ i ] ] ) {
-						full.push( options.classes[ classes[ i ] ] );
-					}
-				}
-			}
-
-			if ( options.keys ) {
-				processClassString( options.keys.match( /\S+/g ) || [], true );
-			}
-			if ( options.extra ) {
-				processClassString( options.extra.match( /\S+/g ) || [] );
-			}
-
-			return full.join( " " );
-		},
-
-		_untrackClassesElement: function( event ) {
-			var that = this;
-			$.each( that.classesElementLookup, function( key, value ) {
-				if ( $.inArray( event.target, value ) !== -1 ) {
-					that.classesElementLookup[ key ] = $( value.not( event.target ).get() );
-				}
-			} );
-
-			this._off( $( event.target ) );
-		},
-
-		_removeClass: function( element, keys, extra ) {
-			return this._toggleClass( element, keys, extra, false );
-		},
-
-		_addClass: function( element, keys, extra ) {
-			return this._toggleClass( element, keys, extra, true );
-		},
-
-		_toggleClass: function( element, keys, extra, add ) {
-			add = ( typeof add === "boolean" ) ? add : extra;
-			var shift = ( typeof element === "string" || element === null ),
-				options = {
-					extra: shift ? keys : extra,
-					keys: shift ? element : keys,
-					element: shift ? this.element : element,
-					add: add
-				};
-			options.element.toggleClass( this._classes( options ), add );
-			return this;
-		},
-
-		_on: function( suppressDisabledCheck, element, handlers ) {
-			var delegateElement;
-			var instance = this;
-
-			// No suppressDisabledCheck flag, shuffle arguments
-			if ( typeof suppressDisabledCheck !== "boolean" ) {
-				handlers = element;
-				element = suppressDisabledCheck;
-				suppressDisabledCheck = false;
-			}
-
-			// No element argument, shuffle and use this.element
-			if ( !handlers ) {
-				handlers = element;
-				element = this.element;
-				delegateElement = this.widget();
-			} else {
-				element = delegateElement = $( element );
-				this.bindings = this.bindings.add( element );
-			}
-
-			$.each( handlers, function( event, handler ) {
-				function handlerProxy() {
-
-					// Allow widgets to customize the disabled handling
-					// - disabled as an array instead of boolean
-					// - disabled class as method for disabling individual parts
-					if ( !suppressDisabledCheck &&
-							( instance.options.disabled === true ||
-							$( this ).hasClass( "ui-state-disabled" ) ) ) {
-						return;
-					}
-					return ( typeof handler === "string" ? instance[ handler ] : handler )
-						.apply( instance, arguments );
-				}
-
-				// Copy the guid so direct unbinding works
-				if ( typeof handler !== "string" ) {
-					handlerProxy.guid = handler.guid =
-						handler.guid || handlerProxy.guid || $.guid++;
-				}
-
-				var match = event.match( /^([\w:-]*)\s*(.*)$/ );
-				var eventName = match[ 1 ] + instance.eventNamespace;
-				var selector = match[ 2 ];
-
-				if ( selector ) {
-					delegateElement.on( eventName, selector, handlerProxy );
-				} else {
-					element.on( eventName, handlerProxy );
-				}
-			} );
-		},
-
-		_off: function( element, eventName ) {
-			eventName = ( eventName || "" ).split( " " ).join( this.eventNamespace + " " ) +
-				this.eventNamespace;
-			element.off( eventName );
-
-			// Clear the stack to avoid memory leaks (#10056)
-			this.bindings = $( this.bindings.not( element ).get() );
-			this.focusable = $( this.focusable.not( element ).get() );
-			this.hoverable = $( this.hoverable.not( element ).get() );
-		},
 
 		_delay: function( handler, delay ) {
 			function handlerProxy() {
@@ -1247,37 +910,8 @@ define( 'skylark-jqueryui/widget',[
 					this._removeClass( $( event.currentTarget ), null, "ui-state-focus" );
 				}
 			} );
-		},
-
-		_trigger: function( type, event, data ) {
-			var prop, orig;
-			var callback = this.options[ type ];
-
-			data = data || {};
-			event = $.Event( event );
-			event.type = ( type === this.widgetEventPrefix ?
-				type :
-				this.widgetEventPrefix + type ).toLowerCase();
-
-			// The original event may come from any element
-			// so we need to reset the target on the new event
-			event.target = this.element[ 0 ];
-
-			// Copy original event properties over to the new event
-			orig = event.originalEvent;
-			if ( orig ) {
-				for ( prop in orig ) {
-					if ( !( prop in event ) ) {
-						event[ prop ] = orig[ prop ];
-					}
-				}
-			}
-
-			this.element.trigger( event, data );
-			return !( $.isFunction( callback ) &&
-				callback.apply( this.element[ 0 ], [ event ].concat( data ) ) === false ||
-				event.isDefaultPrevented() );
 		}
+
 	});
 
 	$.Widget._childConstructors = [];
@@ -1348,11 +982,11 @@ define( 'skylark-jqueryui/widget',[
 //>>css.theme: ../../themes/base/theme.css
 
 define( 'skylark-jqueryui/widgets/accordion',[
-			"skylark-jquery",
-			"../version",
-			"../keycode",
-			"../unique-id",
-			"../widget"
+	"skylark-jquery",
+	"../version",
+	"../keycode",
+	"../unique-id",
+	"../widget"
 ],function( $ ) {
 
 return $.widget( "ui.accordion", {
@@ -3135,13 +2769,13 @@ return $.widget( "ui.menu", {
 //>>css.theme: ../../themes/base/theme.css
 
 define( 'skylark-jqueryui/widgets/autocomplete',[
-			"skylark-jquery",
-			"./menu",
-			"../keycode",
-			"../position",
-			"../safe-active-element",
-			"../version",
-			"../widget"
+	"skylark-jquery",
+	"./menu",
+	"../keycode",
+	"../position",
+	"../safe-active-element",
+	"../version",
+	"../widget"
 ],function( $ ) {
 
 $.widget( "ui.autocomplete", {
@@ -3796,8 +3430,8 @@ return $.ui.autocomplete;
 //>>css.theme: ../../themes/base/theme.css
 
 define( 'skylark-jqueryui/widgets/controlgroup',[
-			"skylark-jquery",
-			"../widget"
+	"skylark-jquery",
+	"../widget"
 ],function( $ ) {
 var controlgroupCornerRegex = /ui-corner-([a-z]){2,6}/g;
 
@@ -4154,11 +3788,11 @@ return $.ui.formResetMixin = {
 //>>css.theme: ../../themes/base/theme.css
 
 define( 'skylark-jqueryui/widgets/checkboxradio',[
-			"skylark-jquery",
-			"../escape-selector",
-			"../form-reset-mixin",
-			"../labels",
-			"../widget"
+	"skylark-jquery",
+	"../escape-selector",
+	"../form-reset-mixin",
+	"../labels",
+	"../widget"
 ],function( $ ) {
 
 $.widget( "ui.checkboxradio", [ $.ui.formResetMixin, {
@@ -4427,15 +4061,15 @@ return $.ui.checkboxradio;
 //>>css.theme: ../../themes/base/theme.css
 
 define( 'skylark-jqueryui/widgets/button',[
-			"skylark-jquery",
+	"skylark-jquery",
 
-			// These are only for backcompat
-			// TODO: Remove after 1.12
-			"./controlgroup",
-			"./checkboxradio",
+	// These are only for backcompat
+	// TODO: Remove after 1.12
+	"./controlgroup",
+	"./checkboxradio",
 
-			"../keycode",
-			"../widget"
+	"../keycode",
+	"../widget"
 ],function( $ ) {
 
 $.widget( "ui.button", {
@@ -4865,9 +4499,9 @@ return $.ui.button;
 //>>css.theme: ../../themes/base/theme.css
 
 define( 'skylark-jqueryui/widgets/datepicker',[
-			"skylark-jquery",
-			"../version",
-			"../keycode"
+	"skylark-jquery",
+	"../version",
+	"../keycode"
 ],function( $ ) {
 
 $.extend( $.ui, { datepicker: { version: "@VERSION" } } );
@@ -9628,20 +9262,20 @@ return $.ui.resizable;
 //>>css.theme: ../../themes/base/theme.css
 
 define( 'skylark-jqueryui/widgets/dialog',[
-			"skylark-jquery",
-			"./button",
-			"./draggable",
-			"./mouse",
-			"./resizable",
-			"../focusable",
-			"../keycode",
-			"../position",
-			"../safe-active-element",
-			"../safe-blur",
-			"../tabbable",
-			"../unique-id",
-			"../version",
-			"../widget"
+	"skylark-jquery",
+	"./button",
+	"./draggable",
+	"./mouse",
+	"./resizable",
+	"../focusable",
+	"../keycode",
+	"../position",
+	"../safe-active-element",
+	"../safe-blur",
+	"../tabbable",
+	"../unique-id",
+	"../version",
+	"../widget"
 ],function( $ ) {
 
 $.widget( "ui.dialog", {

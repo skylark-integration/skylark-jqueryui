@@ -20,11 +20,11 @@
   },
   "license": "MIT",
   "dependencies": {
-    "skylark-jquery": "git+https://github.com/skylarkutils/skylark-jquery.git#master",
-    "skylark-langx": "git+https://github.com/skylarklangx/skylark-langx.git#master",
-    "skylark-utils": "git+https://github.com/skylarkutils/skylark-utils.git#master",
-    "skylark-utils-color": "git+https://github.com/skylarkutils/skylark-utils-color.git#master",
-    "skylark-utils-interact": "git+https://github.com/skylarkutils/skylark-utils-interact.git#master"
+    "skylark-jquery": "https://github.com/skylarkutils/skylark-jquery.git#master",
+    "skylark-jqueryui-interact": "git+https://github.com/skylarkui/skylark-jqueryui-interact.git#master",
+    "skylark-langx": "https://github.com/skylarklangx/skylark-langx.git#master",
+    "skylark-utils-color": "https://github.com/skylarkutils/skylark-utils-color.git#master",
+    "skylark-utils-dom": "https://github.com/skylarkutils/skylark-utils-dom.git#master"
   },
   "engines": {
     "node": ">=0.10.1"
