@@ -5,5 +5,5 @@
  * @link https://github.com/skylarkui/skylark-jqueryui/
  * @license MIT
  */
-define(["skylark-jquery","./version"],function(e){return e.ui.escapeSelector=function(){var e=/([!"#$%&'()*+,.\/:;<=>?@[\]^`{|}~])/g;return function(r){return r.replace(e,"\\$1")}}()});
+define(["skylark-jquery","./version"],function(e){return e.ui.escapeSelector=(r=/([!"#$%&'()*+,./:;<=>?@[\]^`{|}~])/g,function(e){return e.replace(r,"\\$1")});var r});
 //# sourceMappingURL=sourcemaps/escape-selector.js.map

@@ -740,7 +740,7 @@ define( 'skylark-jqueryui/widget',[
 
 		//$.widget.bridge( name, constructor );
 
-		splugins.register(constructor,name);
+		splugins.register(constructor,name,fullName);
 
 		return constructor;
 	};
@@ -14071,3 +14071,4 @@ define('skylark-jqueryui', ['skylark-jqueryui/main'], function (main) { return m
 
 
 },this);
+//# sourceMappingURL=sourcemaps/skylark-jqueryui.js.map

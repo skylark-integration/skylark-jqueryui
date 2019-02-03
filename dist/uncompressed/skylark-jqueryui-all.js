@@ -11108,7 +11108,7 @@ define( 'skylark-jqueryui/widget',[
 
 		//$.widget.bridge( name, constructor );
 
-		splugins.register(constructor,name);
+		splugins.register(constructor,name,fullName);
 
 		return constructor;
 	};

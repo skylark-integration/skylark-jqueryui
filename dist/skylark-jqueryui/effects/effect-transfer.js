@@ -5,5 +5,5 @@
  * @link https://github.com/skylarkui/skylark-jqueryui/
  * @license MIT
  */
-define(["skylark-jquery","../version","../effect"],function(e){var f;return e.uiBackCompat!==!1&&(f=e.effects.define("transfer",function(f,n){e(this).transfer(f,n)})),f});
+define(["skylark-jquery","../version","../effect"],function(e){var f;return!1!==e.uiBackCompat&&(f=e.effects.define("transfer",function(f,n){e(this).transfer(f,n)})),f});
 //# sourceMappingURL=../sourcemaps/effects/effect-transfer.js.map
