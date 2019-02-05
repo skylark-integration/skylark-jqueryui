@@ -615,8 +615,24 @@ define( 'skylark-jqueryui/widget',[
 
 		$[ namespace ] = $[ namespace ] || {};
 
-
 		existingConstructor = $[ namespace ][ name ];
+
+		var basePrototype = base.prototype,
+			newPrototype = {};
+
+		for (var key in prototype) {
+			var value = prototype[key];
+
+			if ( $.isPlainObject( value ) ) {
+				newPrototype[ key ] = $.isPlainObject( basePrototype[ key ] ) ?
+					$.widget.extend( {}, basePrototype[ key ], value ) :
+
+					// Don't extend strings, arrays, etc. with objects
+					$.widget.extend( {}, value );
+			} else {
+				newPrototype[key] = value;
+			}
+		}
 
 		var _proto = $.widget.extend({
 
@@ -626,7 +642,7 @@ define( 'skylark-jqueryui/widget',[
 			widgetEventPrefix: existingConstructor ? ( base.prototype.widgetEventPrefix || name ) : name
 		}, {
 			options : base.prototype.options
-		},prototype, {
+		},newPrototype, {
 			name : fullName,
 			namespace: namespace,
 			widgetName: name,
