@@ -1,6 +1,6 @@
 define([ 
 	"skylark-jquery", 
-	"skylark-utils-dom/noder",
+	"skylark-domx-noder",
 	"./version" 
 ],  function($, noder) {
 	return $.ui.safeActiveElement = noder.active;

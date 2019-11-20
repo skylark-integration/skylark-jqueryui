@@ -13,8 +13,8 @@
 //>>docs: http://api.jqueryui.com/focusable-selector/
 
 define([ 
-	"skylark-utils-dom/query", 
-	"skylark-utils-dom/noder", 
+	"skylark-domx-query", 
+	"skylark-domx-noder", 
 	"./version" 
 ], function( $,noder ) {
 

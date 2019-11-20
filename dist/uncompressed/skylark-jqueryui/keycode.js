@@ -14,8 +14,8 @@
 
 define([ 
 	"skylark-langx/objects", 
- 	"skylark-utils-dom/query", 
- 	"skylark-utils-dom/eventer", 
+ 	"skylark-domx-query", 
+ 	"skylark-domx-eventer", 
 	"./version" 
 ], function( objects, $, eventer ) {
   var keyCode = $.ui.keyCode = {};

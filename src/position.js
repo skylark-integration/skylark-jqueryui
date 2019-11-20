@@ -488,5 +488,5 @@ $.ui.position = {
 } )();
 return $.ui.position;
 */
-	// use skylark-utils
+	// use skylark-domx-geom
 });
