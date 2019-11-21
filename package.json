@@ -18,8 +18,12 @@
   "bugs": {
     "url": "https://github.com/skylark-integration/skylark-jqueryui/issues"
   },
-  "files": ["demos/", "dist/", "src/","themes/"],
-  
+  "files": [
+    "demos/",
+    "dist/",
+    "src/",
+    "themes/"
+  ],
   "license": "MIT",
   "dependencies": {
     "skylark-jquery": "git+https://github.com/skylarkutils/skylark-jquery.git#master",
