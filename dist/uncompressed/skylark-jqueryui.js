@@ -75,7 +75,7 @@
   factory(define,require);
 
   if (!isAmd) {
-    var skylarkjs = require("skylark-langx/skylark");
+    var skylarkjs = require("skylark-langx-ns");
 
     if (isCmd) {
       module.exports = skylarkjs;
@@ -10419,7 +10419,7 @@ define( 'skylark-jqueryui/effects/effect-fade',[
 
 define( 'skylark-jqueryui/effects/effect-fold',[
 	"skylark-domx-effects/plugins/fold"
-],  function( blind ) {
+],  function( fold ) {
 	return fold;
 });
 
