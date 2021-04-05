@@ -1,5 +1,5 @@
 define( [
-	"skylark-domx-effects/plugins/fold"
+	"skylark-jqueryui-effects/plugins/fold"
 ],  function( fold ) {
 	return fold;
 });
