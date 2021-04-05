@@ -10374,7 +10374,7 @@ define( 'skylark-jqueryui/widgets/tooltip',[
 
 define('skylark-jqueryui/effect',[
 	"skylark-jquery", 
-	"skylark-domx-effects/effects" 
+	"skylark-jqueryui-effects/effects" 
 ],function( $, effects ) {
 
 	return $.effects = effects;
