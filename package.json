@@ -7,7 +7,7 @@
     "jqueryui"
   ],
   "scripts": {
-    "build": "sbundle build ."
+    "build": "slib build ."
   },
   "homepage": "https://github.com/skylark-integration/skylark-jqueryui/",
   "author": "Hudaokeji, Inc.",
@@ -28,6 +28,7 @@
   "dependencies": {
     "skylark-domx-effects": "git+https://github.com/skylark-domx/skylark-domx-effects.git#master",
     "skylark-jquery": "git+https://github.com/skylark-integration/skylark-jquery.git#master",
+    "skylark-jqueryui-effects": "git+https://github.com/skylark-domx/skylark-domx-effects.git#master",
     "skylark-jqueryui-interact": "git+https://github.com/skylark-integration/skylark-jqueryui-interact.git#master",
     "skylark-langx": "git+https://github.com/skylark-langx/skylark-langx.git#master"
   },
